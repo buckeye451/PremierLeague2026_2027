@@ -1,49 +1,40 @@
-# Fly.io configuration.
+# fly.toml app configuration file generated for premierleaguepredictions2627 on 2026-08-11T22:11:15Z
 #
-# Before the first deploy:
-#   fly launch --no-deploy --name <your-app-name>   (or edit `app` below)
-#   fly volumes create epl_data --size 1 --region <your-region>
-#   fly secrets set FOOTBALL_API_KEY=... SESSION_SECRET=...
-#   fly deploy
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-# See README.md for the full walkthrough.
 
-app = "epl-predictions-2026-27"
-primary_region = "iad"
+app = 'premierleaguepredictions2627'
+primary_region = 'ord'
 
 [build]
 
 [env]
-  PORT = "8080"
-  DATABASE_PATH = "/data/epl.db"
+  DATABASE_PATH = '/data/epl.db'
+  PORT = '8080'
 
-# The database is a file on this volume, so the app runs as a single machine.
-# That's the right trade for a league of friends: no replication to reason
-# about, and nothing extra to pay for. Do not scale this app past one machine
-# without moving to a networked database first.
-[mounts]
-  source = "epl_data"
-  destination = "/data"
+[[mounts]]
+  source = 'epl_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
 
   [http_service.concurrency]
-    type = "connections"
+    type = 'connections'
     hard_limit = 200
     soft_limit = 150
 
   [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
-    method = "GET"
-    path = "/api/health"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/api/health'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
+  size = 'shared-cpu-1x'
+  memory = '512mb'

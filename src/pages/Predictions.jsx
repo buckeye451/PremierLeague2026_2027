@@ -9,13 +9,16 @@ import { Crest, EmptyState, LockBar, PrimaryLink, SectionHeading } from "../comp
 
 export default function Predictions() {
   const { user, displayName } = useAuth();
-  const { standings, preseason, locked, myOrder, savePrediction } = useLeague();
+  const { standings, preseason, locked, myOrder, myPrediction, savePrediction } = useLeague();
 
   const [draft, setDraft] = useState(null);
+  const [topScorer, setTopScorer] = useState("");
+  const [manager, setManager] = useState("");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
   const [error, setError] = useState(null);
+  const [showGaps, setShowGaps] = useState(false);
   const dragFrom = useRef(null);
   const [dragOver, setDragOver] = useState(null);
 
@@ -26,11 +29,14 @@ export default function Predictions() {
     setDraft(myOrder ? [...myOrder] : defaultPredictionOrder(standings));
   }, [draft, myOrder, standings]);
 
-  // If your saved order changes elsewhere (another device) and you have no
+  // If your saved picks change elsewhere (another device) and you have no
   // unsaved edits here, follow along.
   useEffect(() => {
-    if (!dirty && myOrder) setDraft([...myOrder]);
-  }, [myOrder, dirty]);
+    if (dirty || !myPrediction) return;
+    setDraft([...myPrediction.order]);
+    setTopScorer(myPrediction.topScorer || "");
+    setManager(myPrediction.manager || "");
+  }, [myPrediction, dirty]);
 
   // Warn before losing unsaved changes.
   useEffect(() => {
@@ -45,11 +51,19 @@ export default function Predictions() {
     [standings]
   );
 
+  // All three parts are required, so work out what's still missing and say so
+  // rather than leaving a dead button with no explanation.
+  const scorerOk = topScorer.trim().length >= 2;
+  const managerOk = manager.trim().length >= 2;
+  const missing = [!scorerOk && "the Golden Boot winner", !managerOk && "Manager of the Season"].filter(Boolean);
+  const complete = scorerOk && managerOk;
+
   // Someone who hasn't submitted yet can always save — even the untouched
-  // starting order is a valid prediction. Once saved, only real edits count.
-  const canSave = !saving && (dirty || !myOrder);
+  // starting order is a valid table. Once saved, only real edits count.
+  const canSave = !saving && complete && (dirty || !myPrediction);
 
   const apply = (next) => { setDraft(next); setDirty(true); setSavedAt(null); };
+  const applyText = (setter) => (e) => { setter(e.target.value); setDirty(true); setSavedAt(null); };
   const move = (from, dir) => apply(moveInOrder(draft, from, from + dir));
   const jumpTo = (from, to) => apply(moveInOrder(draft, from, to));
 
@@ -61,12 +75,14 @@ export default function Predictions() {
   };
 
   const save = async () => {
+    if (!complete) { setShowGaps(true); return; }
     setSaving(true);
     setError(null);
     try {
-      await savePrediction(draft);
+      await savePrediction({ order: draft, topScorer: topScorer.trim(), manager: manager.trim() });
       setDirty(false);
       setSavedAt(new Date());
+      setShowGaps(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -75,7 +91,9 @@ export default function Predictions() {
   };
 
   const reset = () => {
-    setDraft(myOrder ? [...myOrder] : defaultPredictionOrder(standings));
+    setDraft(myPrediction ? [...myPrediction.order] : defaultPredictionOrder(standings));
+    setTopScorer(myPrediction?.topScorer || "");
+    setManager(myPrediction?.manager || "");
     setDirty(false);
     setError(null);
   };
@@ -136,6 +154,7 @@ export default function Predictions() {
                 </span>
               </div>
             )}
+            <ExtraPicks topScorer={myPrediction?.topScorer} manager={myPrediction?.manager} />
             <ReadOnlyPrediction order={myOrder} standings={standings} preseason={preseason} teamsByTla={teamsByTla} />
           </>
         )}
@@ -164,17 +183,52 @@ export default function Predictions() {
             style={{ ...S.btnPrimary, ...(canSave ? {} : S.btnDisabled) }}
             onClick={save}
             disabled={!canSave}
+            title={missing.length ? `Still needed: ${missing.join(" and ")}` : undefined}
           >
-            {saving ? "Saving…" : myOrder ? "Save changes" : "Submit prediction"}
+            {saving ? "Saving…" : myPrediction ? "Save changes" : "Submit prediction"}
           </button>
         </div>
       </SectionHeading>
 
       {error && <div style={{ ...S.formError, marginBottom: 16 }}>{error}</div>}
 
-      {!myOrder && (
+      {/* ── Golden Boot & Manager of the Season ── */}
+      <div style={{ ...S.card, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 18 }}>
+          <div>
+            <label style={S.label} htmlFor="topScorer">⚽ Golden Boot — most goals</label>
+            <input
+              id="topScorer"
+              style={{ ...S.input, ...(showGaps && !scorerOk ? { borderColor: C.red } : {}) }}
+              value={topScorer}
+              onChange={applyText(setTopScorer)}
+              placeholder="e.g. Erling Haaland"
+              maxLength={60}
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label style={S.label} htmlFor="manager">🧠 Manager of the Season</label>
+            <input
+              id="manager"
+              style={{ ...S.input, ...(showGaps && !managerOk ? { borderColor: C.red } : {}) }}
+              value={manager}
+              onChange={applyText(setManager)}
+              placeholder="e.g. Mikel Arteta"
+              maxLength={60}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+        <p style={{ ...S.formNote, marginTop: 14, marginBottom: 0 }}>
+          Type any name — these are settled by argument at the end of the season, not by the scoreboard. Both are
+          required before you can submit.
+        </p>
+      </div>
+
+      {!myPrediction && (
         <div style={{ ...S.lockBar, ...S.lockOpen, marginBottom: 16 }}>
-          👋 This is a starting order, not a suggestion — drag it into the shape you actually believe in, then save.
+          👋 The table below is a starting order, not a suggestion — drag it into the shape you actually believe in.
         </div>
       )}
 
@@ -269,14 +323,28 @@ export default function Predictions() {
         </table>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          gap: 12,
+          marginTop: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        {missing.length > 0 && (
+          <span style={{ fontSize: 13, color: C.amber }}>
+            ⚠️ Still needed: {missing.join(" and ")}.
+          </span>
+        )}
         {dirty && <button style={S.btn} onClick={reset}>Undo changes</button>}
         <button
-          style={{ ...S.btnPrimary, ...(saving || !dirty ? S.btnDisabled : {}) }}
+          style={{ ...S.btnPrimary, ...(canSave ? {} : S.btnDisabled) }}
           onClick={save}
-          disabled={saving || !dirty}
+          disabled={!canSave}
         >
-          {saving ? "Saving…" : myOrder ? "Save changes" : "Submit prediction"}
+          {saving ? "Saving…" : myPrediction ? "Save changes" : "Submit prediction"}
         </button>
       </div>
 
@@ -285,6 +353,31 @@ export default function Predictions() {
         picks become public.
       </p>
     </main>
+  );
+}
+
+// ── The two free-text picks, read-only ──
+// Exported so the Everyone pages show them the same way.
+export function ExtraPicks({ topScorer, manager }) {
+  if (!topScorer && !manager) return null;
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+        gap: 12,
+        marginBottom: 20,
+      }}
+    >
+      <div style={S.card}>
+        <div style={{ ...S.label, marginBottom: 8 }}>⚽ Golden Boot</div>
+        <div style={{ fontSize: 18, fontWeight: 600, color: C.textBright }}>{topScorer || "—"}</div>
+      </div>
+      <div style={S.card}>
+        <div style={{ ...S.label, marginBottom: 8 }}>🧠 Manager of the Season</div>
+        <div style={{ fontSize: 18, fontWeight: 600, color: C.textBright }}>{manager || "—"}</div>
+      </div>
+    </div>
   );
 }
 

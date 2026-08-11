@@ -3,6 +3,11 @@
 Predict how the Premier League table will finish, then watch your guess get
 dismantled by reality in real time alongside your friends.
 
+Each prediction has three parts: the full 20-team table, your **Golden Boot**
+pick, and your **Manager of the Season** pick. All three are required — the
+submit button stays off until they're filled in, and the server rejects an
+incomplete prediction regardless of what the browser allows.
+
 - **Anyone can browse** — the table, the leaderboard, everyone's picks, live
   scores. No account, no sign-in.
 - **An account is only needed to make picks** — name, email, 4-digit PIN.
@@ -120,6 +125,12 @@ Ties break on the number of teams placed in exactly the right spot.
 The ▲▼ arrows show how your score has moved since the previous matchday. The
 server records a snapshot automatically the first time it sees a new matchday —
 there's no button anyone has to remember to press.
+
+**Golden Boot and Manager of the Season are free text and aren't scored.** The
+app can't tell whether "Haaland" and "Erling Haaland" are the same answer, and
+Manager of the Season is a subjective award anyway — so both are stored, kept
+sealed until the deadline, then shown side by side on the Everyone page for you
+to settle amongst yourselves.
 
 ### Live data
 

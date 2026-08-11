@@ -4,6 +4,7 @@ import { useLeague } from "../league.jsx";
 import { useAuth } from "../auth.jsx";
 import { Crest, EmptyState, LockBar, Movement, PrimaryLink, SectionHeading } from "../components/ui.jsx";
 import { scorePrediction } from "../scoring.js";
+import { ExtraPicks } from "./Predictions.jsx";
 
 // ── /everyone — who's in, and what they went for ──
 export default function Everyone() {
@@ -98,6 +99,41 @@ export default function Everyone() {
         })}
       </div>
 
+      {/* Side-by-side comparison of the two free-text calls, so you don't have
+          to open every player to see who backed whom. */}
+      {picksVisible && entries.some((e) => e.topScorer || e.manager) && (
+        <div style={{ marginTop: 32 }}>
+          <SectionHeading title="Golden Boot & Manager calls" sub="Settled by argument, not by the scoreboard." />
+          <div style={S.tableWrap}>
+            <table style={S.table}>
+              <thead>
+                <tr>
+                  <th style={{ ...S.th, textAlign: "left" }}>Player</th>
+                  <th style={{ ...S.th, textAlign: "left" }}>⚽ Golden Boot</th>
+                  <th style={{ ...S.th, textAlign: "left" }}>🧠 Manager of the Season</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries
+                  .filter((e) => e.submitted)
+                  .map((e, i) => (
+                    <tr key={e.uid} style={{ ...S.tr, ...(i % 2 === 0 ? S.trEven : {}) }}>
+                      <td style={{ ...S.td, textAlign: "left", fontWeight: 600, color: C.textBright }}>
+                        {e.name}
+                        {user?.uid === e.uid && (
+                          <span style={{ color: C.accentSoft, fontSize: 11, marginLeft: 6 }}>(you)</span>
+                        )}
+                      </td>
+                      <td style={{ ...S.td, textAlign: "left" }}>{e.topScorer || "—"}</td>
+                      <td style={{ ...S.td, textAlign: "left" }}>{e.manager || "—"}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {!standings && <p style={{ ...S.formNote, marginTop: 16 }}>Waiting for the live table…</p>}
     </main>
   );
@@ -172,6 +208,8 @@ function PlayerDetail({ uid }) {
           )}
         </div>
       )}
+
+      <ExtraPicks topScorer={player.topScorer} manager={player.manager} />
 
       <div style={S.tableWrap}>
         <table style={S.table}>

@@ -115,7 +115,13 @@ export function LeagueProvider({ children }) {
     () =>
       members.map((m) => {
         const p = state?.predictions?.[m.uid];
-        return { ...m, order: p?.order || null, submitted: Boolean(p) };
+        return {
+          ...m,
+          order: p?.order || null,
+          topScorer: p?.topScorer || null,
+          manager: p?.manager || null,
+          submitted: Boolean(p),
+        };
       }),
     [members, state]
   );
@@ -126,12 +132,14 @@ export function LeagueProvider({ children }) {
   );
 
   const savePrediction = useCallback(
-    async (order) => {
-      await api.savePrediction(order);
+    async (prediction) => {
+      await api.savePrediction(prediction);
       await refreshState();
     },
     [refreshState]
   );
+
+  const myPrediction = user ? state?.predictions?.[user.uid] || null : null;
 
   const value = useMemo(
     () => ({
@@ -149,13 +157,14 @@ export function LeagueProvider({ children }) {
       snapshot: state?.snapshot || null,
       locked,
       picksVisible,
-      myOrder: user ? state?.predictions?.[user.uid]?.order || null : null,
+      myPrediction,
+      myOrder: myPrediction?.order || null,
       savePrediction,
       loading: !liveReady || !stateReady,
     }),
     [
       standings, live, lastRefresh, apiError, stateError, refreshLive, members, entries,
-      leaderboard, state, locked, picksVisible, user, savePrediction, liveReady, stateReady,
+      leaderboard, state, locked, picksVisible, myPrediction, savePrediction, liveReady, stateReady,
     ]
   );
 

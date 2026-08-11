@@ -32,8 +32,11 @@ export const api = {
 
   logout: () => request("/api/logout", { method: "POST" }),
 
-  savePrediction: (order) =>
-    request("/api/prediction", { method: "PUT", body: JSON.stringify({ order }) }),
+  savePrediction: ({ order, topScorer, manager }) =>
+    request("/api/prediction", {
+      method: "PUT",
+      body: JSON.stringify({ order, topScorer, manager }),
+    }),
 };
 
 // Subscribe to server-sent events. Returns an unsubscribe function.

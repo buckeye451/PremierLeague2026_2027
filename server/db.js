@@ -30,6 +30,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS predictions (
     user_id     TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     order_json  TEXT NOT NULL,
+    top_scorer  TEXT,
+    manager     TEXT,
     updated_at  INTEGER NOT NULL
   );
 
@@ -41,6 +43,15 @@ db.exec(`
   );
 `);
 
+// Golden Boot and Manager of the Season arrived after the first deploy, so
+// add the columns to databases that predate them. Existing rows get NULL and
+// their owner is asked to fill them in next time they open the page.
+{
+  const columns = db.prepare("PRAGMA table_info(predictions)").all().map((c) => c.name);
+  if (!columns.includes("top_scorer")) db.exec("ALTER TABLE predictions ADD COLUMN top_scorer TEXT");
+  if (!columns.includes("manager")) db.exec("ALTER TABLE predictions ADD COLUMN manager TEXT");
+}
+
 const q = {
   insertUser: db.prepare(
     "INSERT INTO users (id, name, email, pin_hash, created_at) VALUES (?, ?, ?, ?, ?)"
@@ -49,8 +60,13 @@ const q = {
   userById: db.prepare("SELECT * FROM users WHERE id = ?"),
   allUsers: db.prepare("SELECT id, name, created_at FROM users ORDER BY created_at ASC"),
   upsertPrediction: db.prepare(`
-    INSERT INTO predictions (user_id, order_json, updated_at) VALUES (?, ?, ?)
-    ON CONFLICT(user_id) DO UPDATE SET order_json = excluded.order_json, updated_at = excluded.updated_at
+    INSERT INTO predictions (user_id, order_json, top_scorer, manager, updated_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(user_id) DO UPDATE SET
+      order_json = excluded.order_json,
+      top_scorer = excluded.top_scorer,
+      manager    = excluded.manager,
+      updated_at = excluded.updated_at
   `),
   predictionFor: db.prepare("SELECT * FROM predictions WHERE user_id = ?"),
   allPredictions: db.prepare("SELECT * FROM predictions"),
@@ -72,19 +88,24 @@ export const findUserById = (id) => q.userById.get(id);
 export const listUsers = () =>
   q.allUsers.all().map((u) => ({ uid: u.id, name: u.name, joinedAt: u.created_at }));
 
-export function savePrediction(userId, order) {
-  q.upsertPrediction.run(userId, JSON.stringify(order), Date.now());
+export function savePrediction(userId, { order, topScorer, manager }) {
+  q.upsertPrediction.run(userId, JSON.stringify(order), topScorer, manager, Date.now());
 }
+
+const shapePrediction = (row) => ({
+  order: JSON.parse(row.order_json),
+  topScorer: row.top_scorer || null,
+  manager: row.manager || null,
+  updatedAt: row.updated_at,
+});
 
 export const getPrediction = (userId) => {
   const row = q.predictionFor.get(userId);
-  return row ? { order: JSON.parse(row.order_json), updatedAt: row.updated_at } : null;
+  return row ? shapePrediction(row) : null;
 };
 
 export const listPredictions = () =>
-  Object.fromEntries(
-    q.allPredictions.all().map((r) => [r.user_id, { order: JSON.parse(r.order_json), updatedAt: r.updated_at }])
-  );
+  Object.fromEntries(q.allPredictions.all().map((r) => [r.user_id, shapePrediction(r)]));
 
 export const getLatestSnapshot = () => {
   const row = q.latestSnapshot.get();

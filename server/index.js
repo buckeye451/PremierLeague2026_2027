@@ -84,6 +84,7 @@ app.get("/api/state", (req, res) => {
     else predictions[uid] = { submitted: true }; // enough to show a ✓, not the picks
   }
 
+
   res.json({
     users: listUsers(),
     predictions,
@@ -174,7 +175,7 @@ app.put("/api/prediction", async (req, res) => {
     return res.status(403).json({ error: "Predictions are locked — the deadline has passed." });
   }
 
-  const { order } = req.body || {};
+  const { order, topScorer, manager } = req.body || {};
   const { table } = await getStandings();
   const valid = new Set(table.map((t) => t.tla));
 
@@ -188,7 +189,19 @@ app.put("/api/prediction", async (req, res) => {
     return res.status(400).json({ error: "That prediction contains a team that isn't in this season." });
   }
 
-  savePrediction(user.id, order);
+  // Golden Boot and Manager of the Season are free text — we can't check that
+  // a name is real, only that a considered answer was given. The browser
+  // blocks the submit button too, but that's a convenience, not the rule.
+  const scorer = typeof topScorer === "string" ? topScorer.trim().replace(/\s+/g, " ") : "";
+  const boss = typeof manager === "string" ? manager.trim().replace(/\s+/g, " ") : "";
+
+  if (scorer.length < 2) return res.status(400).json({ error: "Add your pick for the Golden Boot winner." });
+  if (boss.length < 2) return res.status(400).json({ error: "Add your pick for Manager of the Season." });
+  if (scorer.length > 60 || boss.length > 60) {
+    return res.status(400).json({ error: "Keep those names under 60 characters." });
+  }
+
+  savePrediction(user.id, { order, topScorer: scorer, manager: boss });
   broadcast("state");
   res.json({ ok: true, updatedAt: Date.now() });
 });

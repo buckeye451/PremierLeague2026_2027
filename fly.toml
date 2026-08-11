@@ -12,6 +12,10 @@ primary_region = 'ord'
   DATABASE_PATH = '/data/epl.db'
   PORT = '8080'
 
+# Accounts and predictions live in a SQLite file on this volume. A volume
+# attaches to exactly one machine, so keep this app at one machine — deploy
+# with `fly deploy --ha=false` and don't `fly scale count` above 1 without
+# moving to a networked database first.
 [[mounts]]
   source = 'epl_data'
   destination = '/data'

@@ -23,12 +23,6 @@ export default function Predictions() {
   const dragFrom = useRef(null);
   const [dragOver, setDragOver] = useState(null);
 
-  // The save bar is fixed to the viewport, so the page needs to end above it.
-  // Measured rather than guessed — the bar grows a line when the "still
-  // needed" note wraps on a narrow phone.
-  const barRef = useRef(null);
-  const [barHeight, setBarHeight] = useState(76);
-
   useEffect(() => {
     if (draft || !standings) return;
     setDraft(myOrder ? [...myOrder] : defaultPredictionOrder(standings));
@@ -48,24 +42,6 @@ export default function Predictions() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  useEffect(() => {
-    const el = barRef.current;
-    if (!el) return;
-    const measure = () => setBarHeight(el.offsetHeight);
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [locked, user]);
-
-  // Pad the document, not just this page — the footer lives outside <main>,
-  // and without this it ends up underneath the fixed bar at full scroll.
-  useEffect(() => {
-    if (locked || !user) return;
-    document.body.style.paddingBottom = `${barHeight}px`;
-    return () => { document.body.style.paddingBottom = ""; };
-  }, [barHeight, locked, user]);
 
   const teamsByTla = useMemo(
     () => Object.fromEntries((standings || []).map((t) => [t.tla, t])),
@@ -324,8 +300,9 @@ export default function Predictions() {
         become public.
       </p>
 
-      {/* ── Save bar, pinned to the bottom of the viewport ── */}
-      <div ref={barRef} style={S.stickyBar}>
+      {/* ── Save bar — last thing on the page, so it appears only once you've
+             scrolled to the bottom ── */}
+      <div style={S.stickyBar}>
         {dirty ? (
           <span style={S.statusUnsaved}>Unsaved</span>
         ) : savedAt ? (

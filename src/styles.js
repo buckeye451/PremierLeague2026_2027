@@ -100,8 +100,13 @@ export const S = {
 
   // ── Header ──
   header: { padding: "16px 16px 12px", borderBottom: RULE_INK },
-  headerTop: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 },
+  // Centred, not baseline: an image's baseline is its bottom edge, so the
+  // season tag would hang below the logo rather than sitting against it.
+  headerTop: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 },
   wordmark: { ...heading(20, "-0.02em"), lineHeight: 1, margin: 0, textDecoration: "none" },
+  // The logo is a 3.5:1 lockup. Fix the height and let width follow, capped so
+  // it can never crowd the season tag on a narrow phone.
+  logo: { display: "block", height: 36, width: "auto", maxWidth: "min(230px, 62vw)" },
   seasonTag: { ...label(11, "0.08em", C.accent) },
   metaRow: {
     display: "flex",
@@ -327,28 +332,18 @@ export const S = {
   bigScore: { ...heading(32, "-0.03em"), ...num },
 
   // ── Save bar ──
-  // Fixed rather than sticky: the picks table is 20 rows, and a sticky bar
-  // releases at the foot of the page just as you finish arranging the bottom
-  // of the table — exactly when you want to hit Save. Pinned to the viewport
-  // it is always one thumb away.
+  // Sits in normal flow as the last thing on the page, so the controls only
+  // come into view once you've scrolled to the bottom rather than following
+  // you down the table.
   stickyBar: {
-    position: "fixed",
-    bottom: 0,
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "100%",
-    maxWidth: 1200,
     background: C.surface,
     borderTop: RULE_INK,
-    padding: "12px 16px",
-    // Clears the iPhone home indicator. Declared separately so an unsupported
-    // env() can't invalidate the whole padding shorthand.
-    paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
+    padding: "12px 0 0",
+    marginTop: 16,
     display: "flex",
     alignItems: "center",
     gap: 10,
     flexWrap: "wrap",
-    zIndex: 20,
   },
   statusUnsaved: { ...label(11, "0.06em", C.accent700) },
   statusSaved: { ...label(11, "0.06em", C.n700) },

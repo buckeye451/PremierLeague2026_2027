@@ -6,6 +6,8 @@ import { useLeague } from "../league.jsx";
 import { SEASON_LABEL } from "../config.js";
 import { IconBall, IconHome, IconRefresh, IconTable, IconTarget, IconTrophy, IconUser, IconUsers } from "./icons.jsx";
 
+const LOGO = "/logo-header.png";
+
 const NAV = [
   { to: "/", label: "Home", Icon: IconHome, end: true },
   { to: "/table", label: "Table", Icon: IconTable },
@@ -35,13 +37,15 @@ export default function Layout() {
         <header style={S.header}>
           {bare ? (
             <>
-              <div style={S.wordmark}>EPL PREDICTIONS</div>
+              <img src={LOGO} alt="Premier League Predictions" style={S.logo} />
               <div style={{ ...S.seasonTag, marginTop: 6 }}>{SEASON_LABEL}</div>
             </>
           ) : (
             <>
               <div style={S.headerTop}>
-                <Link to="/" style={S.wordmark}>EPL PREDICTIONS</Link>
+                <Link to="/" style={{ display: "block", lineHeight: 0 }}>
+                  <img src={LOGO} alt="Premier League Predictions" style={S.logo} />
+                </Link>
                 <span style={S.seasonTag}>{SEASON_LABEL}</span>
               </div>
 

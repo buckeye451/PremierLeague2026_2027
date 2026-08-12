@@ -326,18 +326,29 @@ export const S = {
   boxed: { border: RULE_INK, padding: 16 },
   bigScore: { ...heading(32, "-0.03em"), ...num },
 
-  // ── Sticky save bar ──
+  // ── Save bar ──
+  // Fixed rather than sticky: the picks table is 20 rows, and a sticky bar
+  // releases at the foot of the page just as you finish arranging the bottom
+  // of the table — exactly when you want to hit Save. Pinned to the viewport
+  // it is always one thumb away.
   stickyBar: {
-    position: "sticky",
+    position: "fixed",
     bottom: 0,
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "100%",
+    maxWidth: 1200,
     background: C.surface,
     borderTop: RULE_INK,
-    padding: "12px 0 0",
-    marginTop: 16,
+    padding: "12px 16px",
+    // Clears the iPhone home indicator. Declared separately so an unsupported
+    // env() can't invalidate the whole padding shorthand.
+    paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
     display: "flex",
     alignItems: "center",
     gap: 10,
     flexWrap: "wrap",
+    zIndex: 20,
   },
   statusUnsaved: { ...label(11, "0.06em", C.accent700) },
   statusSaved: { ...label(11, "0.06em", C.n700) },

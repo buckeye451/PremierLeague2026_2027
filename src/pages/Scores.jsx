@@ -1,12 +1,11 @@
 import { S, C } from "../styles.js";
 import { useLeague } from "../league.jsx";
-import { Crest, EmptyState, SectionHeading } from "../components/ui.jsx";
+import { Crest, Kicker, SectionHeading } from "../components/ui.jsx";
 
 const dayLabel = (iso) =>
-  new Date(iso).toLocaleDateString("en-GB", { weekday: "short", month: "short", day: "numeric" });
+  new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 
-const timeLabel = (iso) =>
-  new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const timeLabel = (iso) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 export default function Scores() {
   const { matches } = useLeague();
@@ -15,137 +14,132 @@ export default function Scores() {
 
   return (
     <main style={S.main}>
-      <SectionHeading title="Match Centre" sub="Live scores, recent results and what's coming up." />
+      <SectionHeading title="Match centre" sub="Live scores, recent results and what's coming up." />
 
       {nothing && (
-        <EmptyState icon="⚽">
+        <p style={{ fontSize: 13, color: C.n700, lineHeight: 1.5 }}>
           No fixtures to show yet. Once football-data.org publishes the 2026/27 fixture list, it'll appear here.
-        </EmptyState>
+        </p>
       )}
 
       {live.length > 0 && (
-        <section style={{ marginBottom: 32 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              color: C.red,
-              marginBottom: 12,
-              fontFamily: S.mono,
-              letterSpacing: 1,
-            }}
-          >
-            <span style={S.liveDot} /> LIVE NOW
-          </div>
-          <Grid>
+        <section>
+          <Kicker accent>Live now</Kicker>
+          <div style={{ borderTop: `2px solid ${C.accent}`, marginBottom: 24 }}>
             {live.map((m) => (
-              <Card key={m.id} live>
-                <MatchRow m={m} />
-                <div style={{ ...footLabel, color: C.red, display: "flex", justifyContent: "center", gap: 6 }}>
-                  <span style={{ ...S.liveDot, width: 6, height: 6 }} />
-                  {m.minute ? `${m.minute}'` : "In progress"}
-                </div>
-              </Card>
+              <div key={m.id} style={row}>
+                <TeamPair m={m} />
+                <span className="u-num" style={scoreCol}>
+                  <span>{m.homeScore ?? "-"}</span>
+                  <span>{m.awayScore ?? "-"}</span>
+                </span>
+                <span
+                  className="u-num"
+                  style={{ width: 38, textAlign: "right", fontFamily: S.font, fontWeight: 800, fontSize: 11, color: C.accent }}
+                >
+                  {m.minute ? `${m.minute}'` : "LIVE"}
+                </span>
+              </div>
             ))}
-          </Grid>
+          </div>
         </section>
       )}
 
       {recent.length > 0 && (
-        <section style={{ marginBottom: 32 }}>
-          <Subhead>Recent results</Subhead>
-          <Grid>
-            {recent.map((m) => (
-              <Card key={m.id}>
-                <DateBadge>{dayLabel(m.date)}</DateBadge>
-                <MatchRow m={m} />
-                <div style={footLabel}>FT</div>
-              </Card>
-            ))}
-          </Grid>
+        <section>
+          <Kicker>Recent results</Kicker>
+          <div style={{ borderTop: S.RULE_INK, marginBottom: 24 }}>
+            {recent.map((m) => {
+              const homeWin = m.homeScore > m.awayScore;
+              const awayWin = m.awayScore > m.homeScore;
+              const tone = (win, lose) => (win ? C.text : lose ? C.n600 : C.n800);
+              return (
+                <div key={m.id} style={{ borderBottom: `1px solid ${C.n300}`, padding: "12px 0" }}>
+                  <div style={{ ...S.offLabel, marginBottom: 6 }}>{dayLabel(m.date)} · FT</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <TeamPair
+                      m={m}
+                      homeColor={tone(homeWin, awayWin)}
+                      awayColor={tone(awayWin, homeWin)}
+                    />
+                    <span className="u-num" style={scoreCol}>
+                      <span style={{ color: tone(homeWin, awayWin) }}>{m.homeScore}</span>
+                      <span style={{ color: tone(awayWin, homeWin) }}>{m.awayScore}</span>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </section>
       )}
 
       {upcoming.length > 0 && (
         <section>
-          <Subhead>Upcoming fixtures</Subhead>
-          <Grid>
+          <Kicker>Upcoming fixtures</Kicker>
+          <div style={{ borderTop: S.RULE_INK }}>
             {upcoming.map((m) => (
-              <Card key={m.id}>
-                <DateBadge>{dayLabel(m.date)}</DateBadge>
-                <MatchRow m={m} />
-                <div style={footLabel}>{timeLabel(m.date)}</div>
-              </Card>
+              <div key={m.id} style={row}>
+                <TeamPair m={m} />
+                <span style={{ textAlign: "right", flexShrink: 0 }}>
+                  <span className="u-num" style={{ display: "block", fontFamily: S.font, fontWeight: 800, fontSize: 15 }}>
+                    {timeLabel(m.date)}
+                  </span>
+                  <span style={{ ...S.offLabel, display: "block", marginTop: 2 }}>{dayLabel(m.date)}</span>
+                </span>
+              </div>
             ))}
-          </Grid>
+          </div>
         </section>
       )}
     </main>
   );
 }
 
-const footLabel = {
-  fontSize: 10,
-  color: C.mutedDim,
-  fontFamily: S.mono,
-  textAlign: "center",
-  marginTop: 8,
-  letterSpacing: 2,
+const row = {
+  borderBottom: `1px solid ${C.n300}`,
+  padding: "12px 0",
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
 };
 
-const Grid = ({ children }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12 }}>
-    {children}
-  </div>
-);
+const scoreCol = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 6,
+  textAlign: "right",
+  fontFamily: S.font,
+  fontWeight: 800,
+  fontSize: 18,
+  lineHeight: 1.15,
+};
 
-const Card = ({ children, live }) => (
-  <div
-    style={{
-      ...S.card,
-      padding: 16,
-      position: "relative",
-      ...(live ? { border: "1px solid rgba(239,68,68,0.3)", boxShadow: "0 0 20px rgba(239,68,68,0.05)" } : {}),
-    }}
-  >
-    {children}
-  </div>
-);
-
-const DateBadge = ({ children }) => (
-  <div style={{ position: "absolute", top: 10, right: 12, fontSize: 10, color: C.mutedDim, fontFamily: S.mono }}>
-    {children}
-  </div>
-);
-
-const Subhead = ({ children }) => (
-  <h3 style={{ fontFamily: S.mono, fontSize: 14, color: C.text, margin: "0 0 12px", fontWeight: 600 }}>{children}</h3>
-);
-
-function MatchRow({ m }) {
-  const played = typeof m.homeScore === "number" && typeof m.awayScore === "number";
-  const color = (mine, theirs) =>
-    !played ? C.mutedDim : mine > theirs ? C.green : mine < theirs ? C.red : C.amber;
-
+function TeamPair({ m, homeColor, awayColor }) {
   return (
-    <>
-      <Side team={m.home} score={played ? m.homeScore : "-"} color={color(m.homeScore, m.awayScore)} />
-      <Side team={m.away} score={played ? m.awayScore : "-"} color={color(m.awayScore, m.homeScore)} />
-    </>
+    <span style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0, flex: 1 }}>
+      <Side team={m.home} color={homeColor} />
+      <Side team={m.away} color={awayColor} />
+    </span>
   );
 }
 
-const Side = ({ team, score, color }) => (
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", gap: 10 }}>
+function Side({ team, color }) {
+  return (
     <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-      <Crest team={team} size={18} />
-      <span style={{ fontWeight: 500, color: C.textBright, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <Crest team={team} size={14} />
+      <span style={{ ...S.tla, width: 34 }}>{team.tla}</span>
+      <span
+        style={{
+          fontSize: 13,
+          color: color || C.text,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
         {team.name}
       </span>
     </span>
-    <span style={{ fontFamily: S.mono, fontSize: 20, fontWeight: 700, color, flexShrink: 0 }}>{score}</span>
-  </div>
-);
+  );
+}

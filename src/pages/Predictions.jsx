@@ -5,7 +5,8 @@ import { useAuth } from "../auth.jsx";
 import { useLeague } from "../league.jsx";
 import { defaultPredictionOrder } from "../teams.js";
 import { moveInOrder, scorePrediction } from "../scoring.js";
-import { Crest, EmptyState, LockBar, PrimaryLink, SectionHeading } from "../components/ui.jsx";
+import { Crest, EmptyState, Kicker, LockBar, PrimaryLink, SectionHeading } from "../components/ui.jsx";
+import { IconChevronDown, IconChevronUp, IconGrip } from "../components/icons.jsx";
 
 export default function Predictions() {
   const { user, displayName } = useAuth();
@@ -22,15 +23,11 @@ export default function Predictions() {
   const dragFrom = useRef(null);
   const [dragOver, setDragOver] = useState(null);
 
-  // Seed the draft: your saved order if you have one, otherwise the teams
-  // alphabetically so you're arranging a real list rather than a blank page.
   useEffect(() => {
     if (draft || !standings) return;
     setDraft(myOrder ? [...myOrder] : defaultPredictionOrder(standings));
   }, [draft, myOrder, standings]);
 
-  // If your saved picks change elsewhere (another device) and you have no
-  // unsaved edits here, follow along.
   useEffect(() => {
     if (dirty || !myPrediction) return;
     setDraft([...myPrediction.order]);
@@ -38,7 +35,6 @@ export default function Predictions() {
     setManager(myPrediction.manager || "");
   }, [myPrediction, dirty]);
 
-  // Warn before losing unsaved changes.
   useEffect(() => {
     if (!dirty) return;
     const warn = (e) => { e.preventDefault(); e.returnValue = ""; };
@@ -51,15 +47,10 @@ export default function Predictions() {
     [standings]
   );
 
-  // All three parts are required, so work out what's still missing and say so
-  // rather than leaving a dead button with no explanation.
   const scorerOk = topScorer.trim().length >= 2;
   const managerOk = manager.trim().length >= 2;
   const missing = [!scorerOk && "the Golden Boot winner", !managerOk && "Manager of the Season"].filter(Boolean);
   const complete = scorerOk && managerOk;
-
-  // Someone who hasn't submitted yet can always save — even the untouched
-  // starting order is a valid table. Once saved, only real edits count.
   const canSave = !saving && complete && (dirty || !myPrediction);
 
   const apply = (next) => { setDraft(next); setDirty(true); setSavedAt(null); };
@@ -104,12 +95,12 @@ export default function Predictions() {
       <main style={S.main}>
         <LockBar />
         <SectionHeading title="Make your prediction" />
-        <EmptyState icon="🔐">
-          You need an account to submit a prediction — just your name, email and a 4-digit PIN.
-          <br />
-          Everything else on the site is open to anyone, no sign-in needed.
-          <br />
-          <PrimaryLink to="/login" style={{ marginTop: 18 }}>Create an account or sign in</PrimaryLink>
+        <EmptyState>
+          You need an account to submit a prediction — just your name, email and a 4-digit PIN. Everything else on the
+          site is open to anyone, no sign-in needed.
+          <div style={{ marginTop: 16 }}>
+            <PrimaryLink to="/login">Create an account or sign in</PrimaryLink>
+          </div>
         </EmptyState>
       </main>
     );
@@ -138,20 +129,18 @@ export default function Predictions() {
           }
         />
         {!myOrder ? (
-          <EmptyState icon="⌛">
-            You didn't get a prediction in before the deadline, so there's nothing to score.
-            <br />
-            You can still follow everyone else on the{" "}
-            <Link to="/" style={{ color: C.accentSoft }}>home page</Link>.
+          <EmptyState>
+            You didn't get a prediction in before the deadline, so there's nothing to score. You can still follow
+            everyone else on the <Link to="/" className="link-accent">home page</Link>.
           </EmptyState>
         ) : (
           <>
             {score !== null && (
-              <div style={{ ...S.card, marginBottom: 20, display: "flex", alignItems: "baseline", gap: 12 }}>
-                <span style={{ fontFamily: S.mono, fontSize: 32, fontWeight: 700, color: "#fff" }}>{score}</span>
-                <span style={{ color: C.muted, fontSize: 13 }}>
+              <div style={{ ...S.block, marginBottom: 20 }}>
+                <div style={S.bigScore}>{score}</div>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: C.n700 }}>
                   total positions off · lower is better · a perfect table scores 0
-                </span>
+                </p>
               </div>
             )}
             <ExtraPicks topScorer={myPrediction?.topScorer} manager={myPrediction?.manager} />
@@ -169,77 +158,59 @@ export default function Predictions() {
 
       <SectionHeading
         title={`${displayName}'s prediction`}
-        sub="Put the 20 teams in the order you think they'll finish. Drag a row, use the ▲▼ arrows, or type a position. Nothing counts until you hit Save."
-      >
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          {dirty && <span style={{ fontSize: 12, color: C.amber }}>● unsaved changes</span>}
-          {savedAt && !dirty && (
-            <span style={{ fontSize: 12, color: C.green }}>
-              ✓ saved {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </span>
-          )}
-          {dirty && <button style={S.btn} onClick={reset}>Undo</button>}
-          <button
-            style={{ ...S.btnPrimary, ...(canSave ? {} : S.btnDisabled) }}
-            onClick={save}
-            disabled={!canSave}
-            title={missing.length ? `Still needed: ${missing.join(" and ")}` : undefined}
-          >
-            {saving ? "Saving…" : myPrediction ? "Save changes" : "Submit prediction"}
-          </button>
-        </div>
-      </SectionHeading>
+        sub="Put the 20 teams in the order you think they'll finish. Drag a row, use the arrows, or type a position."
+      />
 
       {error && <div style={{ ...S.formError, marginBottom: 16 }}>{error}</div>}
 
-      {/* ── Golden Boot & Manager of the Season ── */}
-      <div style={{ ...S.card, marginBottom: 20 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 18 }}>
-          <div>
-            <label style={S.label} htmlFor="topScorer">⚽ Golden Boot — most goals</label>
-            <input
-              id="topScorer"
-              style={{ ...S.input, ...(showGaps && !scorerOk ? { borderColor: C.red } : {}) }}
-              value={topScorer}
-              onChange={applyText(setTopScorer)}
-              placeholder="e.g. Erling Haaland"
-              maxLength={60}
-              autoComplete="off"
-            />
-          </div>
-          <div>
-            <label style={S.label} htmlFor="manager">🧠 Manager of the Season</label>
-            <input
-              id="manager"
-              style={{ ...S.input, ...(showGaps && !managerOk ? { borderColor: C.red } : {}) }}
-              value={manager}
-              onChange={applyText(setManager)}
-              placeholder="e.g. Mikel Arteta"
-              maxLength={60}
-              autoComplete="off"
-            />
-          </div>
+      {/* ── Golden Boot & Manager ── */}
+      <div style={{ ...S.blockSoft, display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
+        <div>
+          <label style={S.label} htmlFor="topScorer">Golden Boot — most goals</label>
+          <input
+            id="topScorer"
+            className="input-flat u-tap"
+            style={{ ...S.input, ...(showGaps && !scorerOk ? S.inputInvalid : {}) }}
+            value={topScorer}
+            onChange={applyText(setTopScorer)}
+            placeholder="e.g. Erling Haaland"
+            maxLength={60}
+            autoComplete="off"
+          />
         </div>
-        <p style={{ ...S.formNote, marginTop: 14, marginBottom: 0 }}>
-          Type any name — these are settled by argument at the end of the season, not by the scoreboard. Both are
-          required before you can submit.
+        <div>
+          <label style={S.label} htmlFor="manager">Manager of the Season</label>
+          <input
+            id="manager"
+            className="input-flat u-tap"
+            style={{ ...S.input, ...(showGaps && !managerOk ? S.inputInvalid : {}) }}
+            value={manager}
+            onChange={applyText(setManager)}
+            placeholder="e.g. Mikel Arteta"
+            maxLength={60}
+            autoComplete="off"
+          />
+        </div>
+        <p style={S.fineprint}>
+          Free text — settled by argument at the end of the season. Both are required before you can submit.
         </p>
       </div>
 
       {!myPrediction && (
-        <div style={{ ...S.lockBar, ...S.lockOpen, marginBottom: 16 }}>
-          👋 The table below is a starting order, not a suggestion — drag it into the shape you actually believe in.
-        </div>
+        <p style={{ ...S.fineprint, marginBottom: 12 }}>
+          The table below is a starting order, not a suggestion — drag it into the shape you actually believe in.
+        </p>
       )}
 
+      {/* ── Draggable table ── */}
       <div style={S.tableWrap}>
         <table style={S.table}>
           <thead>
             <tr>
-              <th style={{ ...S.th, width: 48 }}>Pos</th>
-              <th style={{ ...S.th, textAlign: "left" }}>Team</th>
-              <th style={{ ...S.th, width: 92 }}>Move</th>
-              <th style={{ ...S.th, width: 70 }}>Jump</th>
+              <th style={{ ...S.th, width: 36 }}>Pos</th>
+              <th style={S.th}>Team</th>
+              <th style={{ ...S.th, width: 100, textAlign: "center" }}>Move</th>
+              <th style={{ ...S.th, width: 56, textAlign: "center" }}>Jump</th>
             </tr>
           </thead>
           <tbody>
@@ -255,47 +226,53 @@ export default function Predictions() {
                   onDrop={() => onDrop(i)}
                   onDragEnd={() => { dragFrom.current = null; setDragOver(null); }}
                   style={{
-                    ...S.tr,
-                    ...(i % 2 === 0 ? S.trEven : {}),
-                    ...(dragOver === i ? S.trDragOver : {}),
                     cursor: "grab",
+                    ...(dragOver === i ? { background: C.accent100, outline: `1px dashed ${C.accent}` } : {}),
                   }}
                 >
-                  <td style={S.td}>
-                    <span
-                      style={{
-                        ...S.rankBadge,
-                        background: zone ? ZONE_COLOR[zone] : "transparent",
-                        color: zone ? "#fff" : C.text,
-                      }}
-                    >
-                      {i + 1}
+                  <td
+                    className="u-num"
+                    style={{
+                      ...S.posCell,
+                      padding: 6,
+                      fontSize: 12,
+                      color: C.text,
+                      borderLeft: `3px solid ${zone ? ZONE_COLOR[zone] : "transparent"}`,
+                    }}
+                  >
+                    {i + 1}
+                  </td>
+                  <td style={{ ...S.td, padding: 6 }}>
+                    <span style={S.teamRow}>
+                      <span style={{ color: C.n500, display: "flex" }}><IconGrip size={12} /></span>
+                      <Crest team={team} size={14} />
+                      <span style={S.tla}>{team.tla}</span>
+                      <span style={{ ...S.teamNameSoft, maxWidth: 110 }}>{team.name}</span>
                     </span>
                   </td>
-                  <td style={{ ...S.td, textAlign: "left" }}>
-                    <div style={S.teamCell}>
-                      <span style={{ color: C.mutedDim, cursor: "grab", fontSize: 14 }} aria-hidden="true">⠿</span>
-                      <Crest team={team} />
-                      <span style={S.teamName}>{team.name}</span>
-                    </div>
-                  </td>
-                  <td style={S.td}>
-                    <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+                  <td style={{ ...S.td, padding: 6 }}>
+                    <span style={{ display: "flex", gap: 4, justifyContent: "center" }}>
                       <button
-                        style={{ ...S.arrowBtn, ...(i === 0 ? S.btnDisabled : {}) }}
+                        className="icon-btn u-tap"
+                        style={{ ...S.iconBtn, ...(i === 0 ? S.btnDisabled : {}) }}
                         onClick={() => move(i, -1)}
                         disabled={i === 0}
                         aria-label={`Move ${team.name} up`}
-                      >▲</button>
+                      >
+                        <IconChevronUp size={14} />
+                      </button>
                       <button
-                        style={{ ...S.arrowBtn, ...(i === draft.length - 1 ? S.btnDisabled : {}) }}
+                        className="icon-btn u-tap"
+                        style={{ ...S.iconBtn, ...(i === draft.length - 1 ? S.btnDisabled : {}) }}
                         onClick={() => move(i, 1)}
                         disabled={i === draft.length - 1}
                         aria-label={`Move ${team.name} down`}
-                      >▼</button>
-                    </div>
+                      >
+                        <IconChevronDown size={14} />
+                      </button>
+                    </span>
                   </td>
-                  <td style={S.td}>
+                  <td style={{ ...S.td, padding: 6, textAlign: "center" }}>
                     <input
                       type="number"
                       min={1}
@@ -305,14 +282,8 @@ export default function Predictions() {
                         const to = Number(e.target.value) - 1;
                         if (Number.isInteger(to) && to >= 0 && to < draft.length) jumpTo(i, to);
                       }}
-                      style={{
-                        ...S.input,
-                        width: 54,
-                        padding: "5px 6px",
-                        fontSize: 13,
-                        textAlign: "center",
-                        fontFamily: S.mono,
-                      }}
+                      className="input-flat u-tap u-num"
+                      style={S.numberInput}
                       aria-label={`Set position for ${team.name}`}
                     />
                   </td>
@@ -323,129 +294,138 @@ export default function Predictions() {
         </table>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          gap: 12,
-          marginTop: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        {missing.length > 0 && (
-          <span style={{ fontSize: 13, color: C.amber }}>
-            ⚠️ Still needed: {missing.join(" and ")}.
+      {/* ── Sticky action bar ── */}
+      <div style={S.stickyBar}>
+        {dirty ? (
+          <span style={S.statusUnsaved}>Unsaved</span>
+        ) : savedAt ? (
+          <span style={S.statusSaved}>
+            Saved {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </span>
+        ) : null}
+
+        {missing.length > 0 && (
+          <span style={{ fontSize: 12, color: C.accent700 }}>Still needed: {missing.join(" and ")}.</span>
         )}
-        {dirty && <button style={S.btn} onClick={reset}>Undo changes</button>}
+
         <button
+          className="btn-outline u-tap"
+          style={{ ...S.btnOutline, marginLeft: "auto", ...(dirty ? {} : S.btnDisabled) }}
+          onClick={reset}
+          disabled={!dirty}
+        >
+          Undo
+        </button>
+        <button
+          className="btn-primary u-tap"
           style={{ ...S.btnPrimary, ...(canSave ? {} : S.btnDisabled) }}
           onClick={save}
           disabled={!canSave}
+          title={missing.length ? `Still needed: ${missing.join(" and ")}` : undefined}
         >
           {saving ? "Saving…" : myPrediction ? "Save changes" : "Submit prediction"}
         </button>
       </div>
 
-      <p style={{ ...S.formNote, marginTop: 16 }}>
-        You can change your prediction as often as you like until the deadline. After that it's frozen and everyone's
-        picks become public.
+      <p style={{ ...S.fineprint, marginTop: 14 }}>
+        Change your prediction as often as you like until the deadline. After that it's frozen and everyone's picks
+        become public.
       </p>
     </main>
   );
 }
 
-// ── The two free-text picks, read-only ──
-// Exported so the Everyone pages show them the same way.
+// ── The two free-text picks, read-only. Shared with the Everyone pages. ──
 export function ExtraPicks({ topScorer, manager }) {
   if (!topScorer && !manager) return null;
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-        gap: 12,
-        marginBottom: 20,
-      }}
-    >
-      <div style={S.card}>
-        <div style={{ ...S.label, marginBottom: 8 }}>⚽ Golden Boot</div>
-        <div style={{ fontSize: 18, fontWeight: 600, color: C.textBright }}>{topScorer || "—"}</div>
+    <div style={{ ...S.blockSoft, marginBottom: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div>
+        <Kicker>Golden Boot</Kicker>
+        <div style={{ fontFamily: S.font, fontWeight: 800, fontSize: 17 }}>{topScorer || "—"}</div>
       </div>
-      <div style={S.card}>
-        <div style={{ ...S.label, marginBottom: 8 }}>🧠 Manager of the Season</div>
-        <div style={{ fontSize: 18, fontWeight: 600, color: C.textBright }}>{manager || "—"}</div>
+      <div>
+        <Kicker>Manager of the Season</Kicker>
+        <div style={{ fontFamily: S.font, fontWeight: 800, fontSize: 17 }}>{manager || "—"}</div>
       </div>
     </div>
   );
 }
 
-// ── Locked view: prediction vs reality, row by row ──
-function ReadOnlyPrediction({ order, standings, preseason, teamsByTla }) {
+// ── Diff chip: square, no radius, accent-tinted when badly wrong. ──
+export function DiffChip({ diff }) {
+  if (diff === null || diff === undefined) return "—";
+  const exact = diff === 0;
+  const close = Math.abs(diff) <= 2;
+  return (
+    <span
+      className="u-num"
+      style={{
+        display: "inline-block",
+        padding: "2px 6px",
+        fontFamily: S.font,
+        fontWeight: 800,
+        fontSize: 11,
+        ...(exact
+          ? { background: C.surface, color: C.text, border: `1px solid ${C.text}` }
+          : close
+          ? { background: C.n100, color: C.n700, border: `1px solid ${C.n100}` }
+          : { background: C.accent200, color: C.accent800, border: `1px solid ${C.accent200}` }),
+      }}
+    >
+      {exact ? "✓" : diff > 0 ? `↓${diff}` : `↑${Math.abs(diff)}`}
+    </span>
+  );
+}
+
+// ── Locked view: prediction against reality ──
+export function ReadOnlyPrediction({ order, standings, preseason, teamsByTla }) {
   return (
     <div style={S.tableWrap}>
       <table style={S.table}>
         <thead>
           <tr>
-            <th style={{ ...S.th, width: 48 }}>Pred</th>
-            <th style={{ ...S.th, textAlign: "left" }}>Team</th>
-            {!preseason && <th style={S.th}>Actual</th>}
-            {!preseason && <th style={S.th}>Diff</th>}
+            <th style={{ ...S.th, width: 36 }}>Pred</th>
+            <th style={S.th}>Team</th>
+            {!preseason && <th style={S.thNum}>Actual</th>}
+            {!preseason && <th style={{ ...S.th, textAlign: "center", width: 64 }}>Diff</th>}
           </tr>
         </thead>
         <tbody>
           {order.map((tla, i) => {
             const team = teamsByTla[tla] || { tla, name: tla };
-            const actual = standings.findIndex((t) => t.tla === tla);
+            const actual = standings ? standings.findIndex((t) => t.tla === tla) : -1;
             const diff = actual === -1 ? null : actual - i;
             const zone = zoneOf(i, order.length);
             return (
-              <tr key={tla} style={{ ...S.tr, ...(i % 2 === 0 ? S.trEven : {}) }}>
-                <td style={S.td}>
-                  <span
-                    style={{
-                      ...S.rankBadge,
-                      background: zone ? ZONE_COLOR[zone] : "transparent",
-                      color: zone ? "#fff" : C.text,
-                    }}
-                  >
-                    {i + 1}
+              <tr key={tla}>
+                <td
+                  className="u-num"
+                  style={{
+                    ...S.posCell,
+                    padding: 6,
+                    fontSize: 12,
+                    color: C.text,
+                    borderLeft: `3px solid ${zone ? ZONE_COLOR[zone] : "transparent"}`,
+                  }}
+                >
+                  {i + 1}
+                </td>
+                <td style={{ ...S.td, padding: 6 }}>
+                  <span style={S.teamRow}>
+                    <Crest team={team} size={14} />
+                    <span style={S.tla}>{team.tla}</span>
+                    <span style={{ ...S.teamNameSoft, maxWidth: 130 }}>{team.name}</span>
                   </span>
                 </td>
-                <td style={{ ...S.td, textAlign: "left" }}>
-                  <div style={S.teamCell}>
-                    <Crest team={team} />
-                    <span style={S.teamName}>{team.name}</span>
-                  </div>
-                </td>
                 {!preseason && (
-                  <td style={{ ...S.td, fontFamily: S.mono, fontWeight: 700, color: C.muted }}>
+                  <td className="u-num" style={{ ...S.tdNum, fontFamily: S.font, fontWeight: 800, color: C.text }}>
                     {actual === -1 ? "—" : actual + 1}
                   </td>
                 )}
                 {!preseason && (
-                  <td style={S.td}>
-                    {diff === null ? (
-                      "—"
-                    ) : (
-                      <span
-                        style={{
-                          padding: "2px 8px",
-                          borderRadius: 4,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          fontFamily: S.mono,
-                          background:
-                            diff === 0 ? "rgba(34,197,94,0.15)"
-                            : Math.abs(diff) <= 2 ? "rgba(250,204,21,0.15)"
-                            : "rgba(239,68,68,0.15)",
-                          color: diff === 0 ? C.green : Math.abs(diff) <= 2 ? C.amber : C.red,
-                        }}
-                      >
-                        {diff === 0 ? "✓ spot on" : diff > 0 ? `↓ ${diff}` : `↑ ${Math.abs(diff)}`}
-                      </span>
-                    )}
+                  <td style={{ ...S.td, padding: 6, textAlign: "center" }}>
+                    <DiffChip diff={diff} />
                   </td>
                 )}
               </tr>

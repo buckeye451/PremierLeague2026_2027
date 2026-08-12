@@ -1,37 +1,76 @@
-// Shared inline-style objects. Same visual language as the 2025/26 app:
-// near-black background, violet accent, DM Sans for text and Space Mono for
-// anything numeric.
+// ─── Modernist ──────────────────────────────────────────────
+// White ground, flat, typographic. One family (Archivo), square corners, no
+// shadows. Rules do the layout work: 2px ink for structure, 1px greys inside
+// tables. The single accent is Premier League purple.
 
 export const C = {
-  bg: "#0c0e14",
-  panel: "#111422",
-  panelAlt: "#0f1119",
-  line: "#1e2230",
-  line2: "#2a2f40",
-  text: "#c4c9d4",
-  textBright: "#e2e5eb",
-  muted: "#6b7086",
-  mutedDim: "#4a4f5e",
-  accent: "#8b5cf6",
-  accentSoft: "#c4b5fd",
-  green: "#22c55e",
-  red: "#ef4444",
-  amber: "#facc15",
-  blue: "#2563eb",
+  text: "#201e1d",
+  surface: "#ffffff",
+  divider: "rgba(32,30,29,0.4)",
+
+  accent: "#3D195B",
+  accent100: "#f3eff8",
+  accent200: "#e2d8ed",
+  accent300: "#c6b2da",
+  accent400: "#9c80bb",
+  accent500: "#6b4a95",
+  accent600: "#2f1246",
+  accent700: "#2a1040", // accent-coloured *text* — never `accent` at body size
+  accent800: "#1d0b2b",
+  accent900: "#150820",
+
+  n100: "#f8f4f4",
+  n200: "#eae7e7",
+  n300: "#d7d3d3",
+  n400: "#bab6b6",
+  n500: "#9b9797",
+  n600: "#7d7979",
+  n700: "#605d5d",
+  n800: "#444141",
+  n900: "#2d2b2b",
 };
 
-const mono = "'Space Mono', ui-monospace, monospace";
-const sans = "'DM Sans', system-ui, sans-serif";
+const font = "'Archivo', system-ui, sans-serif";
+const HEAVY = 800;
+
+// Every numeral in the app is tabular so columns line up.
+export const num = { fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum"' };
+
+const heading = (size, tracking) => ({
+  fontFamily: font,
+  fontWeight: HEAVY,
+  fontSize: size,
+  ...(tracking !== undefined ? { letterSpacing: tracking } : {}),
+});
+
+// Small uppercase label, used for kickers, nav, table headers and meta rows.
+const label = (size, tracking, color) => ({
+  fontFamily: font,
+  fontWeight: HEAVY,
+  fontSize: size,
+  letterSpacing: tracking,
+  textTransform: "uppercase",
+  color,
+});
+
+const RULE_INK = `2px solid ${C.text}`;
+const RULE_DIV = `2px solid ${C.divider}`;
+const RULE_HEAD = `1px solid ${C.n300}`;
+const RULE_BODY = `1px solid ${C.n200}`;
 
 export const S = {
-  mono,
-  sans,
+  font,
+  num,
+  RULE_INK,
+  RULE_DIV,
+  RULE_HEAD,
+  RULE_BODY,
 
   // ── Shell ──
-  root: { fontFamily: sans, background: C.bg, minHeight: "100vh", color: C.text },
+  root: { fontFamily: font, background: C.surface, minHeight: "100vh", color: C.text },
   shell: { maxWidth: 1200, margin: "0 auto" },
-  main: { padding: "24px 20px 72px" },
-  mainWide: { padding: "24px 12px 72px" },
+  main: { padding: 16 },
+  mainWide: { padding: 16 },
 
   loadingScreen: {
     display: "flex",
@@ -39,406 +78,357 @@ export const S = {
     alignItems: "center",
     justifyContent: "center",
     minHeight: "100vh",
-    background: C.bg,
+    background: C.surface,
+    padding: 24,
   },
   spinner: {
     width: 36,
     height: 36,
-    border: `3px solid ${C.line}`,
+    border: `3px solid ${C.n200}`,
     borderTop: `3px solid ${C.accent}`,
-    borderRadius: "50%",
     animation: "spin 1s linear infinite",
   },
 
   banner: {
-    padding: "10px 20px",
-    fontSize: 13,
-    textAlign: "center",
-    borderBottom: `1px solid rgba(239,68,68,0.3)`,
-    background: "rgba(239,68,68,0.12)",
-    color: "#fca5a5",
+    padding: "10px 16px",
+    fontSize: 12,
+    lineHeight: 1.45,
+    borderBottom: `2px solid ${C.accent}`,
+    background: C.accent100,
+    color: C.accent800,
   },
 
   // ── Header ──
-  header: {
-    background: "linear-gradient(135deg, #111422 0%, #1a1d2e 100%)",
-    borderBottom: `1px solid ${C.line}`,
-    padding: "18px 24px",
-  },
-  headerInner: {
+  header: { padding: "16px 16px 12px", borderBottom: RULE_INK },
+  headerTop: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 },
+  wordmark: { ...heading(20, "-0.02em"), lineHeight: 1, margin: 0, textDecoration: "none" },
+  seasonTag: { ...label(11, "0.08em", C.accent) },
+  metaRow: {
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 10,
+    marginTop: 10,
     flexWrap: "wrap",
-    gap: 12,
+    ...label(11, "0.06em", C.n700),
   },
-  headerLeft: { display: "flex", alignItems: "center", gap: 14, textDecoration: "none" },
-  logoMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    background: `linear-gradient(135deg, ${C.accent}, #6366f1)`,
+  metaItem: { display: "flex", alignItems: "center", gap: 5 },
+  metaDivider: { width: 1, height: 11, background: C.n400, display: "inline-block", flexShrink: 0 },
+  liveMark: { width: 7, height: 7, background: C.accent, display: "inline-block", flexShrink: 0 },
+  metaButton: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    fontSize: 22,
-    flexShrink: 0,
-  },
-  logoIcon: { filter: "grayscale(1) brightness(10)" },
-  title: { fontFamily: mono, fontSize: 19, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.5px" },
-  subtitle: { fontSize: 12, color: C.muted, margin: 0 },
-  headerRight: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
-
-  liveIndicator: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    fontSize: 11,
-    fontWeight: 700,
-    color: C.red,
-    fontFamily: mono,
-    letterSpacing: 1,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: "50%",
-    background: C.red,
-    boxShadow: "0 0 8px rgba(239,68,68,0.5)",
-    animation: "pulse 1.5s ease-in-out infinite",
-  },
-  weekBadge: {
-    background: C.line,
-    color: "#8a8f98",
-    fontSize: 11,
-    fontWeight: 700,
-    padding: "4px 10px",
-    borderRadius: 6,
-    fontFamily: mono,
-  },
-  refreshBtn: {
-    background: "rgba(34,197,94,0.1)",
-    color: C.green,
-    fontSize: 10,
-    fontWeight: 600,
-    padding: "5px 10px",
-    borderRadius: 6,
-    border: "1px solid rgba(34,197,94,0.2)",
-    cursor: "pointer",
-    fontFamily: sans,
-  },
-  userChip: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    background: "rgba(139,92,246,0.12)",
-    border: `1px solid rgba(139,92,246,0.35)`,
-    color: C.accentSoft,
-    fontSize: 12,
-    fontWeight: 600,
-    padding: "5px 12px",
-    borderRadius: 20,
-    textDecoration: "none",
-  },
-  signOutBtn: {
+    gap: 5,
     background: "none",
-    border: "none",
-    color: C.muted,
-    fontSize: 11,
-    cursor: "pointer",
-    fontFamily: sans,
-    textDecoration: "underline",
+    border: 0,
     padding: 0,
+    cursor: "pointer",
+    font: "inherit",
+    color: C.n700,
+    letterSpacing: "0.06em",
   },
 
   // ── Nav ──
-  navBar: {
-    display: "flex",
-    borderBottom: `1px solid ${C.line}`,
-    background: C.panelAlt,
-    overflowX: "auto",
-    position: "sticky",
-    top: 0,
-    zIndex: 20,
-  },
+  navBar: { display: "flex", overflowX: "auto", borderBottom: RULE_DIV },
   navLink: {
     flex: "1 0 auto",
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    padding: "13px 14px",
-    background: "none",
-    border: "none",
-    borderBottom: "2px solid transparent",
-    color: C.muted,
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: "pointer",
-    fontFamily: sans,
-    whiteSpace: "nowrap",
+    gap: 4,
+    // 10px sides rather than 12: it's the difference between all six items
+    // fitting across a 390px phone and "Scores" hanging off the edge.
+    padding: "10px 10px 8px",
+    minHeight: 52,
+    borderBottom: "3px solid transparent",
+    color: C.n600,
     textDecoration: "none",
+    whiteSpace: "nowrap",
+    ...label(10, "0.06em", C.n600),
   },
-  navLinkActive: { color: "#fff", borderBottomColor: C.accent, background: "rgba(139,92,246,0.06)" },
+  navLinkActive: { borderBottomColor: C.accent, color: C.text },
 
-  // ── Section headings ──
-  sectionTitle: { fontFamily: mono, fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 4px" },
-  sectionSub: { fontSize: 13, color: C.muted, margin: "0 0 20px", lineHeight: 1.5 },
-  sectionHead: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    flexWrap: "wrap",
-    gap: 12,
-  },
+  // ── Headings ──
+  h3: { ...heading(22, "-0.02em"), margin: "0 0 2px", lineHeight: 1.12 },
+  h4: { ...heading(18), margin: "0 0 2px", lineHeight: 1.15 },
+  sectionSub: { margin: "0 0 16px", fontSize: 13, color: C.n700, lineHeight: 1.45 },
+  sectionHead: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, marginBottom: 12 },
+  kicker: { ...label(11, "0.08em", C.n700), marginBottom: 8 },
 
   // ── Tables ──
-  tableWrap: { overflowX: "auto", borderRadius: 10, border: `1px solid ${C.line}`, background: C.panel },
-  table: { width: "100%", borderCollapse: "collapse", fontSize: 13 },
+  tableWrap: { overflowX: "auto", borderTop: RULE_INK },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 12 },
   th: {
-    padding: "10px 12px",
-    textAlign: "center",
-    fontSize: 10,
-    fontWeight: 700,
-    color: C.muted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    borderBottom: `1px solid ${C.line}`,
-    fontFamily: mono,
+    padding: "8px 6px",
+    textAlign: "left",
+    borderBottom: RULE_HEAD,
+    background: C.surface,
     whiteSpace: "nowrap",
+    ...label(9, "0.08em", C.n700),
   },
-  tr: { transition: "background 0.15s" },
-  trEven: { background: "rgba(255,255,255,0.015)" },
-  trDragOver: { background: "rgba(139,92,246,0.14)", outline: `1px dashed ${C.accent}` },
-  td: { padding: "9px 12px", textAlign: "center", borderBottom: "1px solid rgba(30,34,48,0.5)" },
+  thNum: {
+    padding: "8px 4px",
+    textAlign: "right",
+    borderBottom: RULE_HEAD,
+    background: C.surface,
+    whiteSpace: "nowrap",
+    ...label(9, "0.08em", C.n700),
+  },
+  td: { padding: "7px 6px", textAlign: "left", borderBottom: RULE_BODY },
+  tdNum: { padding: "7px 4px", textAlign: "right", borderBottom: RULE_BODY, color: C.n700, ...num },
 
-  rankBadge: {
-    display: "inline-flex",
+  posCell: {
+    padding: "7px 6px",
+    textAlign: "left",
+    borderBottom: RULE_BODY,
+    ...heading(11),
+    color: C.n600,
+    ...num,
+  },
+  teamChip: { width: 14, height: 14, flexShrink: 0, display: "inline-block" },
+  teamRow: { display: "flex", alignItems: "center", gap: 6, minWidth: 0 },
+  tla: { ...heading(11, "0.04em"), flexShrink: 0 },
+  teamNameSoft: { fontSize: 11, color: C.n700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+
+  // ── Ruled lists (Everyone, Leaderboard, Scores) ──
+  list: { borderTop: RULE_INK },
+  listRow: {
+    display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    fontSize: 11,
-    fontWeight: 700,
-    fontFamily: mono,
+    gap: 12,
+    padding: "14px 4px",
+    borderBottom: `1px solid ${C.n300}`,
+    minHeight: 56,
+    textDecoration: "none",
+    color: C.text,
   },
-  teamCell: { display: "flex", alignItems: "center", gap: 8 },
-  teamDot: { width: 10, height: 10, borderRadius: "50%", flexShrink: 0, display: "inline-block" },
-  crest: { width: 20, height: 20, objectFit: "contain", flexShrink: 0 },
-  crestSmall: { width: 18, height: 18, objectFit: "contain", flexShrink: 0 },
-  teamName: { fontWeight: 500, color: C.textBright },
-  teamAbbr: { fontSize: 10, color: C.mutedDim, fontFamily: mono },
-
-  legendRow: { display: "flex", gap: 16, marginTop: 12, flexWrap: "wrap" },
-  legendItem: { display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted },
-  legendDot: { width: 8, height: 8, borderRadius: 3 },
+  listRank: { ...heading(13), color: C.n600, width: 28, flexShrink: 0, ...num },
+  listName: { ...heading(15, "-0.01em") },
+  listMeta: { fontSize: 11, color: C.n600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  listScore: { ...heading(24, "-0.02em"), ...num },
+  offLabel: { ...label(10, "0.06em", C.n600) },
 
   // ── Buttons ──
-  btn: {
-    background: C.line,
-    color: C.text,
-    border: `1px solid ${C.line2}`,
-    padding: "9px 16px",
-    borderRadius: 8,
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: sans,
-  },
   btnPrimary: {
-    background: `linear-gradient(135deg, ${C.accent}, #6366f1)`,
+    border: `1px solid ${C.accent}`,
+    background: C.accent,
     color: "#fff",
-    border: "none",
-    padding: "10px 20px",
-    borderRadius: 8,
-    fontSize: 13,
-    fontWeight: 600,
+    padding: "11px 18px",
+    minHeight: 44,
     cursor: "pointer",
-    fontFamily: sans,
+    textAlign: "left",
+    ...heading(12, "0.04em"),
   },
-  btnActive: { background: "rgba(34,197,94,0.15)", borderColor: C.green, color: C.green },
-  btnToggleOn: { background: "rgba(139,92,246,0.15)", borderColor: C.accent, color: C.accentSoft },
-  btnDisabled: { opacity: 0.45, cursor: "not-allowed" },
-  arrowBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 5,
-    border: `1px solid ${C.line2}`,
-    background: C.line,
+  btnOutline: {
+    border: `1px solid ${C.n400}`,
+    background: C.surface,
     color: C.text,
-    fontSize: 10,
+    padding: "11px 14px",
+    minHeight: 44,
+    cursor: "pointer",
+    ...heading(12, "0.04em"),
+  },
+  btnInk: {
+    border: `1px solid ${C.text}`,
+    background: C.text,
+    color: "#fff",
+    padding: "7px 10px",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    ...label(10, "0.06em", "#fff"),
+  },
+  btnDisabled: { opacity: 0.45, cursor: "not-allowed" },
+  iconBtn: {
+    width: 44,
+    height: 32,
+    border: `1px solid ${C.n400}`,
+    background: C.surface,
+    color: C.text,
     cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
+    padding: 0,
   },
-
-  // ── Cards / panels ──
-  card: { background: C.panel, border: `1px solid ${C.line}`, borderRadius: 10, padding: 20 },
-  emptyState: { textAlign: "center", padding: "56px 20px" },
-  emptyIcon: { fontSize: 44, marginBottom: 12 },
-  emptyText: { color: C.muted, fontSize: 14, lineHeight: 1.6, margin: 0 },
 
   // ── Forms ──
-  label: {
-    display: "block",
-    fontSize: 11,
-    fontWeight: 700,
-    color: C.muted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 6,
-    fontFamily: mono,
-  },
+  label: { display: "block", marginBottom: 6, ...label(10, "0.08em", C.n700) },
   input: {
     width: "100%",
-    background: C.bg,
-    border: `1px solid ${C.line2}`,
-    color: "#fff",
-    padding: "12px 14px",
-    borderRadius: 8,
+    background: C.surface,
+    border: `1px solid ${C.n400}`,
+    color: C.text,
+    padding: 12,
     fontSize: 15,
+    fontFamily: font,
     outline: "none",
-    fontFamily: sans,
+    borderRadius: 0,
+    minHeight: 48,
   },
-  pinInput: { letterSpacing: 10, fontFamily: mono, fontSize: 20, textAlign: "center" },
+  inputInvalid: { borderColor: C.accent },
+  pinInput: {
+    ...heading(22, "12px"),
+    textAlign: "center",
+    minHeight: 56,
+    ...num,
+  },
+  numberInput: {
+    width: 48,
+    height: 32,
+    border: `1px solid ${C.n400}`,
+    background: C.surface,
+    color: C.text,
+    textAlign: "center",
+    outline: "none",
+    borderRadius: 0,
+    padding: "0 4px",
+    ...heading(12),
+    ...num,
+  },
   formError: {
-    background: "rgba(239,68,68,0.12)",
-    border: "1px solid rgba(239,68,68,0.3)",
-    color: "#fca5a5",
-    padding: "10px 14px",
-    borderRadius: 8,
-    fontSize: 13,
-    lineHeight: 1.5,
+    border: `2px solid ${C.accent}`,
+    color: C.accent800,
+    padding: "10px 12px",
+    fontSize: 12,
+    lineHeight: 1.45,
   },
-  formNote: { fontSize: 12, color: C.muted, lineHeight: 1.6, margin: 0 },
+  fineprint: { fontSize: 11, color: C.n600, lineHeight: 1.7, margin: 0 },
 
-  // ── Lock / countdown ──
-  lockBar: {
+  // ── Lock bar ──
+  lockOpen: {
+    border: `2px solid ${C.accent}`,
+    padding: "10px 12px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     flexWrap: "wrap",
-    padding: "12px 18px",
-    borderRadius: 10,
     marginBottom: 20,
-    fontSize: 13,
-  },
-  lockOpen: {
-    background: "rgba(139,92,246,0.1)",
-    border: `1px solid rgba(139,92,246,0.3)`,
-    color: C.accentSoft,
+    fontSize: 12,
+    lineHeight: 1.4,
   },
   lockClosed: {
-    background: "rgba(239,68,68,0.08)",
-    border: "1px solid rgba(239,68,68,0.25)",
-    color: "#fca5a5",
+    border: RULE_INK,
+    padding: "10px 12px",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 20,
+    fontSize: 13,
+    lineHeight: 1.4,
   },
-  countdownNum: { fontFamily: mono, fontWeight: 700, color: "#fff", fontSize: 15 },
+  countdown: { ...heading(15, "-0.01em"), color: C.accent700, ...num },
+  strong: { fontFamily: font, fontWeight: HEAVY },
+
+  // ── Flat blocks (replacing cards) ──
+  block: { borderTop: RULE_INK, paddingTop: 16 },
+  blockSoft: { borderTop: RULE_DIV, paddingTop: 16 },
+  boxed: { border: RULE_INK, padding: 16 },
+  bigScore: { ...heading(32, "-0.03em"), ...num },
+
+  // ── Sticky save bar ──
+  stickyBar: {
+    position: "sticky",
+    bottom: 0,
+    background: C.surface,
+    borderTop: RULE_INK,
+    padding: "12px 0 0",
+    marginTop: 16,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  statusUnsaved: { ...label(11, "0.06em", C.accent700) },
+  statusSaved: { ...label(11, "0.06em", C.n700) },
+
+  // ── Legend ──
+  legendRow: { display: "flex", gap: 14, marginTop: 12, flexWrap: "wrap", fontSize: 11, color: C.n700 },
+  legendItem: { display: "flex", alignItems: "center", gap: 6 },
+  legendBar: { width: 3, height: 12, display: "inline-block", flexShrink: 0 },
 
   footer: {
-    textAlign: "center",
-    padding: 20,
+    borderTop: RULE_DIV,
+    padding: 16,
     fontSize: 11,
-    color: "#3a3f4e",
-    borderTop: `1px solid ${C.line}`,
-    lineHeight: 1.8,
+    color: C.n600,
+    lineHeight: 1.7,
   },
 };
 
 // ── The comparison grid ──
-// Live table on the left (frozen while you scroll sideways), one column per
-// player to the right.
-const stickyHead = {
-  padding: "8px 8px",
-  fontSize: 9,
-  fontWeight: 700,
-  color: C.muted,
-  textTransform: "uppercase",
-  letterSpacing: 0.8,
-  borderBottom: `2px solid ${C.line}`,
-  fontFamily: mono,
-  background: C.panelAlt,
-  position: "sticky",
-  top: 0,
-  whiteSpace: "nowrap",
-};
-
 export const G = {
-  wrap: {
-    overflowX: "auto",
-    overflowY: "visible",
-    borderRadius: 10,
-    border: `1px solid ${C.line}`,
-    background: C.panel,
-  },
+  wrap: { overflowX: "auto", borderTop: S.RULE_INK },
   table: { width: "max-content", minWidth: "100%", borderCollapse: "collapse", fontSize: 12 },
 
-  th: { ...stickyHead, textAlign: "center", zIndex: 2 },
-  thPos: { ...stickyHead, textAlign: "center", left: 0, zIndex: 4, width: 34, minWidth: 34 },
-  thTeam: { ...stickyHead, textAlign: "left", left: 34, zIndex: 4, minWidth: 130 },
+  th: { ...S.th, padding: "8px 6px", textAlign: "right" },
+  thPos: { ...S.th, width: 30, position: "sticky", left: 0, zIndex: 3 },
+  thTeam: { ...S.th, minWidth: 104, position: "sticky", left: 30, zIndex: 3 },
+  thPts: { ...S.th, padding: "8px 6px", textAlign: "right", color: C.text },
+  thGd: { ...S.th, padding: "8px 10px 8px 6px", textAlign: "right", borderRight: S.RULE_INK },
   thPlayer: {
-    padding: "6px 8px",
+    padding: "8px 6px",
     textAlign: "center",
-    borderBottom: `2px solid ${C.line}`,
-    background: C.panelAlt,
-    position: "sticky",
-    top: 0,
-    zIndex: 2,
-    minWidth: 58,
+    borderBottom: S.RULE_HEAD,
+    borderRight: `1px solid ${C.n200}`,
+    background: C.surface,
+    minWidth: 52,
   },
-
+  playerRank: { ...heading(9, "0.06em"), color: C.n600, ...num },
   playerName: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: C.accentSoft,
-    fontFamily: mono,
+    ...heading(10, "0.04em"),
+    textTransform: "uppercase",
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
-    maxWidth: 80,
-  },
-  playerScore: { fontSize: 9, color: C.muted, fontFamily: mono, marginTop: 2 },
-  playerRank: { fontSize: 10, marginBottom: 2, lineHeight: 1 },
-
-  td: {
-    padding: "5px 8px",
-    textAlign: "center",
-    borderBottom: "1px solid rgba(30,34,48,0.5)",
-    fontSize: 11,
+    maxWidth: 60,
+    display: "block",
+    textDecoration: "none",
     color: C.text,
   },
+  playerScore: { fontSize: 9, color: C.n600, ...num },
+
   tdPos: {
-    padding: "5px 6px",
-    textAlign: "center",
-    borderBottom: "1px solid rgba(30,34,48,0.5)",
-    background: C.bg,
+    padding: 6,
+    textAlign: "left",
+    borderBottom: S.RULE_BODY,
+    background: C.surface,
     position: "sticky",
     left: 0,
     zIndex: 1,
-    width: 34,
-    minWidth: 34,
+    ...heading(11),
+    color: C.n600,
+    ...num,
   },
   tdTeam: {
-    padding: "5px 10px",
+    padding: 6,
     textAlign: "left",
-    borderBottom: "1px solid rgba(30,34,48,0.5)",
-    background: C.bg,
-    position: "sticky",
-    left: 34,
-    zIndex: 1,
-    minWidth: 130,
+    borderBottom: S.RULE_BODY,
+    background: C.surface,
     whiteSpace: "nowrap",
+    position: "sticky",
+    left: 30,
+    zIndex: 1,
   },
-  divider: { borderRight: `2px solid ${C.accent}` },
-  cellCentre: { display: "flex", alignItems: "center", justifyContent: "center" },
-  hit: { background: "rgba(34,197,94,0.18)" },
-  near: { background: "rgba(250,204,21,0.07)" },
+  td: { padding: 6, textAlign: "right", borderBottom: S.RULE_BODY, color: C.n700, ...num },
+  tdPts: { padding: 6, textAlign: "right", borderBottom: S.RULE_BODY, ...heading(12), ...num },
+  tdGd: { padding: "6px 10px 6px 6px", textAlign: "right", borderBottom: S.RULE_BODY, borderRight: S.RULE_INK, ...num },
+  tdCell: {
+    padding: 6,
+    textAlign: "center",
+    borderBottom: S.RULE_BODY,
+    borderRight: `1px solid ${C.n200}`,
+  },
+  cellInner: { display: "flex", alignItems: "center", justifyContent: "center", gap: 3 },
+  cellChip: { width: 10, height: 10, display: "inline-block", flexShrink: 0 },
+  cellTla: { ...heading(9, "0.02em") },
+
+  hit: { background: C.accent200 },
+  near: { background: C.n100 },
+  zoneBreak: { borderTop: `2px solid ${C.n400}` },
 };
 
-// Zone colours for CL / EL / relegation stripes.
+// ── Zones ──
 export function zoneOf(index, total) {
   if (index < 4) return "cl";
   if (index === 4) return "el";
@@ -448,27 +438,64 @@ export function zoneOf(index, total) {
 }
 
 export const ZONE_COLOR = {
-  cl: "#1a6b3c",
-  el: "#2563eb",
-  ecl: "#f59e0b",
-  rel: "#dc2626",
+  cl: C.text,
+  el: C.n600,
+  ecl: C.n400,
+  rel: C.accent,
 };
 
-// Inject the couple of things inline styles can't do.
+export const ZONE_LABEL = {
+  cl: "Champions League",
+  el: "Europa",
+  ecl: "Conference",
+  rel: "Relegation",
+};
+
+// Form chips: W is ink, D is outlined, L is accent-tinted.
+export const FORM_CHIP = {
+  W: { background: C.text, color: "#fff", border: `1px solid ${C.text}` },
+  D: { background: C.surface, color: C.n700, border: `1px solid ${C.n400}` },
+  L: { background: C.accent200, color: C.accent800, border: `1px solid ${C.accent300}` },
+};
+
+// The couple of things inline styles can't express: hover, focus, keyframes.
 if (typeof document !== "undefined" && !document.getElementById("epl-global-css")) {
   const el = document.createElement("style");
   el.id = "epl-global-css";
   el.textContent = `
-    @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
     @keyframes spin { to { transform: rotate(360deg) } }
     * { box-sizing: border-box }
-    body { margin:0; background:${C.bg}; -webkit-text-size-adjust:100% }
+    body {
+      margin: 0;
+      background: ${C.surface};
+      color: ${C.text};
+      font-family: ${font};
+      -webkit-text-size-adjust: 100%;
+    }
     a { color: inherit }
-    input:focus { border-color:${C.accent} !important }
-    button:not(:disabled):hover { filter: brightness(1.15) }
-    ::-webkit-scrollbar { width:6px; height:6px }
-    ::-webkit-scrollbar-track { background:transparent }
-    ::-webkit-scrollbar-thumb { background:${C.line2}; border-radius:3px }
+    button, input { font-family: ${font} }
+    :focus { outline: none }
+    :focus-visible { outline: 2px solid ${C.accent}; outline-offset: 2px }
+    ::selection { background: ${C.accent200} }
+
+    .u-num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" }
+    .u-tap { transition: background-color .15s, border-color .15s, color .15s }
+
+    .nav-item:hover { color: ${C.accent} }
+    .meta-btn:hover { color: ${C.accent} }
+    .btn-primary:not(:disabled):hover { background: ${C.accent600}; border-color: ${C.accent600} }
+    .btn-outline:not(:disabled):hover { border-color: ${C.text} }
+    .btn-ink:not(:disabled):hover { background: ${C.accent}; border-color: ${C.accent} }
+    .icon-btn:not(:disabled):hover { border-color: ${C.accent}; color: ${C.accent} }
+    .row-link:hover { background: ${C.n100} }
+    .link-accent { color: ${C.accent700} }
+    .link-accent:hover { text-decoration: underline; text-underline-offset: 3px }
+    .input-flat:hover { border-color: ${C.n600} }
+    .input-flat:focus-visible { border-color: ${C.accent}; outline-offset: 0 }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px }
+    ::-webkit-scrollbar-track { background: ${C.n100} }
+    ::-webkit-scrollbar-thumb { background: ${C.n400} }
   `;
   document.head.appendChild(el);
 }

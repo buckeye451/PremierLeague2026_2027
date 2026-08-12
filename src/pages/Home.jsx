@@ -3,108 +3,130 @@ import { Link } from "react-router-dom";
 import { S, C, G, ZONE_COLOR, zoneOf } from "../styles.js";
 import { useLeague } from "../league.jsx";
 import { useAuth } from "../auth.jsx";
-import { Crest, EmptyState, LockBar, Movement, PrimaryLink, SectionHeading, ZoneLegend } from "../components/ui.jsx";
+import { Crest, EmptyState, Kicker, LockBar, Movement, PrimaryLink, SectionHeading, ZoneLegend } from "../components/ui.jsx";
 import { SEASON_LABEL } from "../config.js";
 
 export default function Home() {
-  const { standings, preseason, members, entries, leaderboard, locked, picksVisible, snapshot } = useLeague();
+  const { standings, preseason, members, entries, leaderboard, picksVisible, snapshot } = useLeague();
   const { user } = useAuth();
   const [sortByRank, setSortByRank] = useState(true);
 
   const withPicks = entries.filter((e) => e.order);
   const rankOf = Object.fromEntries(leaderboard.map((e) => [e.uid, e]));
 
-  // Order the player columns: leaderboard order once there's a table to rank
-  // against, otherwise the order people joined.
-  const columns = sortByRank && !preseason
-    ? [...withPicks].sort((a, b) => (rankOf[a.uid]?.rank ?? 999) - (rankOf[b.uid]?.rank ?? 999))
-    : withPicks;
+  const columns =
+    sortByRank && !preseason
+      ? [...withPicks].sort((a, b) => (rankOf[a.uid]?.rank ?? 999) - (rankOf[b.uid]?.rank ?? 999))
+      : withPicks;
 
   return (
     <main style={S.mainWide}>
       <LockBar />
 
-      {/* ── Leaderboard strip ── */}
-      {!preseason && leaderboard.length > 0 && (
-        <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, marginBottom: 24 }}>
-          {leaderboard.slice(0, 5).map((e) => (
-            <div
-              key={e.uid}
-              style={{
-                ...S.card,
-                padding: "12px 16px",
-                minWidth: 150,
-                flexShrink: 0,
-                ...(e.rank === 1 ? { border: `1px solid rgba(139,92,246,0.4)`, background: "linear-gradient(135deg, rgba(139,92,246,0.12), rgba(99,102,241,0.05))" } : {}),
-              }}
-            >
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>
-                {e.rank === 1 ? "🥇" : e.rank === 2 ? "🥈" : e.rank === 3 ? "🥉" : `#${e.rank}`}{" "}
-                <span style={{ color: C.textBright, fontWeight: 600 }}>{e.name}</span>
+      {/* ── Leader strip ── */}
+      {!preseason && picksVisible && leaderboard.length > 0 && (
+        <>
+          <Kicker>Standing</Kicker>
+          <div
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              borderTop: S.RULE_INK,
+              borderBottom: `1px solid ${C.n300}`,
+              marginBottom: 24,
+            }}
+          >
+            {leaderboard.map((e) => (
+              <div
+                key={e.uid}
+                style={{
+                  flex: "0 0 auto",
+                  minWidth: 112,
+                  padding: "10px 14px 12px",
+                  borderRight: `1px solid ${C.n300}`,
+                  background: e.rank === 1 ? C.accent100 : C.surface,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, ...S.listRank, width: "auto" }}>
+                  <span className="u-num">{e.rank}.</span>
+                  <span style={{ color: C.text, textTransform: "uppercase" }}>{e.name}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 6 }}>
+                  <span className="u-num" style={{ fontFamily: S.font, fontWeight: 800, fontSize: 26, lineHeight: 1, letterSpacing: "-0.02em" }}>
+                    {e.score}
+                  </span>
+                  <span style={S.offLabel}>off</span>
+                  <Movement value={e.movement} style={{ marginLeft: "auto", fontSize: 11 }} />
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                <span style={{ fontFamily: S.mono, fontSize: 22, fontWeight: 700, color: "#fff" }}>{e.score}</span>
-                <span style={{ fontSize: 10, color: C.mutedDim }}>off</span>
-                <Movement value={e.movement} style={{ fontSize: 11, marginLeft: "auto" }} />
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
       <SectionHeading
-        title={`Premier League ${SEASON_LABEL}`}
+        title={preseason ? `Premier League ${SEASON_LABEL}` : "The table, side by side"}
         sub={
           preseason
             ? "The season hasn't kicked off yet — this is the team list everyone is predicting."
-            : "The live table on the left, everyone's predicted table alongside it. Scroll sideways for more players."
+            : "Live standings on the left, everyone's picks alongside."
         }
       >
-        {columns.length > 1 && !preseason && (
-          <button
-            style={{ ...S.btn, ...(sortByRank ? S.btnToggleOn : {}) }}
-            onClick={() => setSortByRank((v) => !v)}
-          >
-            {sortByRank ? "🏆 Sorted by rank" : "↕️ Sort by leaderboard"}
+        {columns.length > 1 && !preseason && picksVisible && (
+          <button className="btn-ink u-tap" style={S.btnInk} onClick={() => setSortByRank((v) => !v)}>
+            {sortByRank ? "By rank" : "By join order"}
           </button>
         )}
       </SectionHeading>
 
-      {/* ── Nobody has signed up yet ── */}
+      {/* ── Nobody has joined ── */}
       {members.length === 0 && (
-        <EmptyState icon="🎯">
-          Nobody has made a prediction yet.
-          <br />
-          <PrimaryLink to={user ? "/predictions" : "/login"} style={{ marginTop: 16 }}>
-            {user ? "Make your prediction" : "Create an account"}
-          </PrimaryLink>
-        </EmptyState>
+        <div style={{ marginBottom: 24 }}>
+          <EmptyState>
+            Nobody has made a prediction yet.
+            <div style={{ marginTop: 14 }}>
+              <PrimaryLink to={user ? "/predictions" : "/login"}>
+                {user ? "Make your prediction" : "Create an account"}
+              </PrimaryLink>
+            </div>
+          </EmptyState>
+        </div>
       )}
 
-      {/* ── Picks are still under wraps ── */}
+      {/* ── Picks still sealed ── */}
       {members.length > 0 && !picksVisible && (
-        <div style={{ ...S.card, textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 40, marginBottom: 10 }}>🤫</div>
-          <p style={{ ...S.emptyText, marginBottom: 14 }}>
-            <strong style={{ color: C.textBright }}>
+        <div style={{ marginBottom: 24 }}>
+          <EmptyState>
+            <strong style={S.strong}>
               {members.length} {members.length === 1 ? "person has" : "people have"} joined.
             </strong>
             <br />
-            Everyone's picks stay hidden until the deadline, so nobody can copy. They'll all appear here the moment
+            Everyone's picks stay hidden until the deadline, so nobody can copy. They all appear here the moment
             predictions lock.
-          </p>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-            {members.map((m) => (
-              <span key={m.uid} style={{ ...S.weekBadge, fontFamily: S.sans, fontSize: 12, padding: "6px 12px" }}>
-                {m.name} {entries.find((e) => e.uid === m.uid)?.submitted ? "✓" : "…"}
-              </span>
-            ))}
-          </div>
-          {!locked && (
-            <p style={{ ...S.formNote, marginTop: 16 }}>
-              ✓ = prediction submitted · … = still deciding
-            </p>
-          )}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+              {members.map((m) => {
+                const done = entries.find((e) => e.uid === m.uid)?.submitted;
+                return (
+                  <span
+                    key={m.uid}
+                    style={{
+                      border: `1px solid ${done ? C.text : C.n400}`,
+                      color: done ? C.text : C.n600,
+                      padding: "5px 10px",
+                      fontFamily: S.font,
+                      fontWeight: 800,
+                      fontSize: 11,
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {m.name} {done ? "✓" : "…"}
+                  </span>
+                );
+              })}
+            </div>
+            <p style={{ ...S.fineprint, marginTop: 12 }}>✓ submitted · … still deciding</p>
+          </EmptyState>
         </div>
       )}
 
@@ -117,26 +139,16 @@ export default function Home() {
                 <tr>
                   <th style={G.thPos}>#</th>
                   <th style={G.thTeam}>Team</th>
-                  <th style={G.th}>P</th>
-                  <th style={G.th}>Pts</th>
-                  <th style={{ ...G.th, ...G.divider }}>GD</th>
+                  <th style={G.th}>Pl</th>
+                  <th style={G.thPts}>Pts</th>
+                  <th style={G.thGd}>GD</th>
                   {picksVisible &&
-                    columns.map((p, i) => (
-                      <th
-                        key={p.uid}
-                        style={{
-                          ...G.thPlayer,
-                          borderRight: i < columns.length - 1 ? `1px solid ${C.line}` : "none",
-                        }}
-                      >
+                    columns.map((p) => (
+                      <th key={p.uid} style={G.thPlayer}>
                         {sortByRank && !preseason && rankOf[p.uid] && (
-                          <div style={G.playerRank}>
-                            {rankOf[p.uid].rank === 1 ? "🥇" : rankOf[p.uid].rank === 2 ? "🥈" : rankOf[p.uid].rank === 3 ? "🥉" : `#${rankOf[p.uid].rank}`}
-                          </div>
+                          <div style={G.playerRank}>{rankOf[p.uid].rank}.</div>
                         )}
-                        <Link to={`/everyone/${p.uid}`} style={{ ...G.playerName, textDecoration: "none", display: "block" }}>
-                          {p.name}
-                        </Link>
+                        <Link to={`/everyone/${p.uid}`} style={G.playerName}>{p.name}</Link>
                         <div style={G.playerScore}>{rankOf[p.uid]?.score ?? "—"}</div>
                       </th>
                     ))}
@@ -145,58 +157,32 @@ export default function Home() {
               <tbody>
                 {standings.map((row, pos) => {
                   const zone = preseason ? null : zoneOf(pos, standings.length);
-                  const stripe =
-                    pos === 4 ? `2px solid ${ZONE_COLOR.el}`
-                    : pos === 6 ? `2px solid ${ZONE_COLOR.ecl}`
-                    : pos === standings.length - 3 ? `2px solid ${ZONE_COLOR.rel}`
-                    : undefined;
+                  const isBreak = !preseason && (pos === 4 || pos === 6 || pos === standings.length - 3);
 
                   return (
-                    <tr
-                      key={row.tla}
-                      style={{
-                        ...S.tr,
-                        ...(pos % 2 === 0 ? S.trEven : {}),
-                        ...(stripe && !preseason ? { borderTop: stripe } : {}),
-                      }}
-                    >
-                      <td style={G.tdPos}>
-                        <span
-                          style={{
-                            ...S.rankBadge,
-                            background: zone ? ZONE_COLOR[zone] : "transparent",
-                            color: zone ? "#fff" : C.text,
-                          }}
-                        >
-                          {pos + 1}
-                        </span>
+                    <tr key={row.tla} style={isBreak ? G.zoneBreak : undefined}>
+                      <td style={{ ...G.tdPos, borderLeft: `3px solid ${zone ? ZONE_COLOR[zone] : "transparent"}` }}>
+                        {pos + 1}
                       </td>
                       <td style={G.tdTeam}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <Crest team={row} size={20} />
-                          <span style={{ color: C.textBright, fontWeight: 500, fontSize: 12 }}>{row.name}</span>
-                        </div>
+                        <span style={S.teamRow}>
+                          <Crest team={row} size={14} />
+                          <span style={S.tla}>{row.tla}</span>
+                          <span style={{ ...S.teamNameSoft, maxWidth: 96 }}>{row.name}</span>
+                        </span>
                       </td>
                       <td style={G.td}>{row.played}</td>
-                      <td style={{ ...G.td, color: "#fff", fontWeight: 700 }}>{row.pts}</td>
-                      <td
-                        style={{
-                          ...G.td,
-                          ...G.divider,
-                          fontWeight: 600,
-                          color: row.gd > 0 ? C.green : row.gd < 0 ? C.red : "#8a8f98",
-                        }}
-                      >
+                      <td style={G.tdPts}>{row.pts}</td>
+                      <td style={{ ...G.tdGd, color: row.gd < 0 ? C.accent700 : C.n800 }}>
                         {row.gd > 0 ? `+${row.gd}` : row.gd}
                       </td>
 
                       {picksVisible &&
-                        columns.map((p, i) => {
+                        columns.map((p) => {
                           const predTla = p.order?.[pos];
-                          const border = i < columns.length - 1 ? "1px solid rgba(30,34,48,0.5)" : "none";
-                          if (!predTla) return <td key={p.uid} style={{ ...G.td, borderRight: border }}>—</td>;
+                          if (!predTla) return <td key={p.uid} style={G.tdCell}>—</td>;
 
-                          const predTeam = standings.find((t) => t.tla === predTla);
+                          const predTeam = standings.find((t) => t.tla === predTla) || { tla: predTla };
                           const actualIdx = standings.findIndex((t) => t.tla === predTla);
                           const exact = predTla === row.tla;
                           const near = !exact && actualIdx !== -1 && Math.abs(actualIdx - pos) <= 1;
@@ -205,15 +191,15 @@ export default function Home() {
                             <td
                               key={p.uid}
                               style={{
-                                ...G.td,
+                                ...G.tdCell,
                                 ...(preseason ? {} : exact ? G.hit : near ? G.near : {}),
-                                borderRight: border,
                               }}
-                              title={`${p.name}: ${predTeam?.name || predTla} at ${pos + 1}`}
+                              title={`${p.name}: ${predTeam.name || predTla} at ${pos + 1}`}
                             >
-                              <div style={G.cellCentre}>
-                                <Crest team={predTeam || { tla: predTla }} size={22} />
-                              </div>
+                              <span style={G.cellInner}>
+                                <Crest team={predTeam} size={10} />
+                                <span style={{ ...G.cellTla, color: exact ? C.accent800 : C.text }}>{predTla}</span>
+                              </span>
                             </td>
                           );
                         })}
@@ -226,8 +212,8 @@ export default function Home() {
 
           <ZoneLegend showExact={picksVisible && !preseason} />
 
-          {snapshot && !preseason && (
-            <p style={{ ...S.formNote, marginTop: 12 }}>
+          {snapshot && !preseason && picksVisible && (
+            <p style={{ ...S.fineprint, marginTop: 12 }}>
               ▲▼ compares each score against matchday {snapshot.matchday}.
             </p>
           )}

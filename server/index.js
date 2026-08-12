@@ -243,7 +243,18 @@ app.use(
 );
 
 // Client-side routing: anything that isn't an API call gets the app shell.
-app.get(/^\/(?!api\/).*/, (_req, res) => res.sendFile(join(DIST, "index.html")));
+//
+// Except requests that name a file. If express.static didn't find
+// /link-preview.png, answering with the HTML shell and a 200 tells a link
+// preview scraper it fetched an image successfully and got a web page —
+// which shows up as a mysteriously broken preview rather than a plain
+// missing image. A genuine 404 is both truthful and easier to debug.
+app.get(/^\/(?!api\/).*/, (req, res) => {
+  if (/\.[a-z0-9]{2,5}$/i.test(req.path)) {
+    return res.status(404).type("text/plain").send("Not found");
+  }
+  res.sendFile(join(DIST, "index.html"));
+});
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`EPL Predictions ${SEASON_LABEL} listening on :${PORT}`);

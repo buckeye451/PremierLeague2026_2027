@@ -23,6 +23,12 @@ export default function Predictions() {
   const dragFrom = useRef(null);
   const [dragOver, setDragOver] = useState(null);
 
+  // Whatever is currently typed in a Jump box, before it's applied.
+  // The field can't be driven straight off the row index: clearing it would
+  // fail validation and React would immediately paint the old digit back, so
+  // you could never delete a number to type a different one.
+  const [jumpEdit, setJumpEdit] = useState(null); // { tla, value }
+
   useEffect(() => {
     if (draft || !standings) return;
     setDraft(myOrder ? [...myOrder] : defaultPredictionOrder(standings));
@@ -57,7 +63,17 @@ export default function Predictions() {
   const apply = (next) => { setDraft(next); setDirty(true); setSavedAt(null); };
   const applyText = (setter) => (e) => { setter(e.target.value); setDirty(true); setSavedAt(null); };
   const move = (from, dir) => apply(moveInOrder(draft, from, from + dir));
-  const jumpTo = (from, to) => apply(moveInOrder(draft, from, to));
+
+  // Applied when you leave the box or press Enter — not on every keystroke.
+  // Typing "12" used to jump to 1 the moment the first digit landed, which
+  // shuffled the row out from under your finger before you'd finished.
+  const commitJump = (tla, from) => {
+    const raw = jumpEdit?.tla === tla ? jumpEdit.value.trim() : "";
+    setJumpEdit(null);
+    if (!raw) return; // left empty — leave the team where it is
+    const to = Math.min(draft.length, Math.max(1, Number(raw))) - 1;
+    if (Number.isInteger(to) && to !== from) apply(moveInOrder(draft, from, to));
+  };
 
   const onDrop = (to) => {
     if (dragFrom.current === null) return;
@@ -159,7 +175,7 @@ export default function Predictions() {
 
       <SectionHeading
         title={`${displayName}'s prediction`}
-        sub="Put the 20 teams in the order you think they'll finish. Drag a row, use the arrows, or type a position."
+        sub="Put the 20 teams in the order you think they'll finish. Type a position in the Jump box for a big move, or nudge with the arrows. On a computer you can also drag rows."
       />
 
       {error && <div style={{ ...S.formError, marginBottom: 16 }}>{error}</div>}
@@ -199,7 +215,7 @@ export default function Predictions() {
 
       {!myPrediction && (
         <p style={{ ...S.fineprint, marginBottom: 12 }}>
-          The table below is a starting order, not a suggestion — drag it into the shape you actually believe in.
+          The table below is a starting order, not a suggestion — rearrange it into the shape you actually believe in.
         </p>
       )}
 
@@ -245,7 +261,7 @@ export default function Predictions() {
                   </td>
                   <td style={{ ...S.td, padding: 6 }}>
                     <span style={S.teamRow}>
-                      <span style={{ color: C.n500, display: "flex" }}><IconGrip size={12} /></span>
+                      <span className="drag-grip"><IconGrip size={12} /></span>
                       <Crest team={team} size={14} />
                       <span style={S.tla}>{team.tla}</span>
                       <span style={{ ...S.teamNameSoft, maxWidth: 110 }}>{team.name}</span>
@@ -275,17 +291,30 @@ export default function Predictions() {
                   </td>
                   <td style={{ ...S.td, padding: 6, textAlign: "center" }}>
                     <input
-                      type="number"
-                      min={1}
-                      max={draft.length}
-                      value={i + 1}
-                      onChange={(e) => {
-                        const to = Number(e.target.value) - 1;
-                        if (Number.isInteger(to) && to >= 0 && to < draft.length) jumpTo(i, to);
+                      // Not type="number": on iOS it brings up a keypad you
+                      // can't reliably clear from, and desktop spinners are
+                      // useless at this size. text + inputMode gets the
+                      // numeric keypad without the baggage.
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={2}
+                      value={jumpEdit?.tla === tla ? jumpEdit.value : String(i + 1)}
+                      onFocus={(e) => {
+                        setJumpEdit({ tla, value: String(i + 1) });
+                        e.target.select(); // tap then type replaces, no fiddly delete
                       }}
+                      onChange={(e) =>
+                        setJumpEdit({ tla, value: e.target.value.replace(/\D/g, "").slice(0, 2) })
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); }
+                        if (e.key === "Escape") { setJumpEdit(null); e.currentTarget.blur(); }
+                      }}
+                      onBlur={() => commitJump(tla, i)}
                       className="input-flat u-tap u-num"
                       style={S.numberInput}
-                      aria-label={`Set position for ${team.name}`}
+                      aria-label={`Position for ${team.name}, currently ${i + 1}. Type a number and press Enter.`}
                     />
                   </td>
                 </tr>

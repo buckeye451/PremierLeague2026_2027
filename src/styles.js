@@ -245,7 +245,10 @@ export const S = {
   btnDisabled: { opacity: 0.45, cursor: "not-allowed" },
   iconBtn: {
     width: 44,
-    height: 32,
+    // 44 square, not 44x32. The design sheet asks for a 44px minimum touch
+    // target and then specifies 32 here; on a phone the shorter button is
+    // genuinely hard to hit next to a 20-row table.
+    height: 44,
     border: `1px solid ${C.n400}`,
     background: C.surface,
     color: C.text,
@@ -279,7 +282,7 @@ export const S = {
   },
   numberInput: {
     width: 48,
-    height: 32,
+    height: 44,
     border: `1px solid ${C.n400}`,
     background: C.surface,
     color: C.text,
@@ -486,6 +489,14 @@ if (typeof document !== "undefined" && !document.getElementById("epl-global-css"
 
     .u-num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" }
     .u-tap { transition: background-color .15s, border-color .15s, color .15s }
+
+    /* HTML5 drag-and-drop doesn't fire on touch, so on a phone the grip is an
+       affordance for something that cannot happen. Hide it there and let the
+       arrows and the Jump box do the work.
+       Layout lives here rather than inline: an inline display would outrank
+       the media query and the grip would stay visible. */
+    .drag-grip { display: flex; color: ${C.n500} }
+    @media (hover: none) { .drag-grip { display: none } }
 
     .nav-item:hover { color: ${C.accent} }
     .meta-btn:hover { color: ${C.accent} }

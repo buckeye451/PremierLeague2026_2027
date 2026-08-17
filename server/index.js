@@ -14,7 +14,7 @@ import {
 } from "./auth.js";
 import {
   createUser, findUserByEmail, findUserById, getLatestSnapshot, getPrediction,
-  listPredictions, listUsers, putSnapshot, savePrediction,
+  listPredictions, listSnapshots, listUsers, listUsersFull, putSnapshot, savePrediction,
 } from "./db.js";
 import { getMatches, getStandings } from "./football.js";
 import { addClient, broadcast } from "./events.js";
@@ -57,6 +57,14 @@ function currentUser(req) {
 const publicUser = (u) => ({ uid: u.id, name: u.name });
 const clientIp = (req) => req.ip || req.socket.remoteAddress || "unknown";
 
+// ─── Who runs the league ────────────────────────────────────
+// Set with `fly secrets set ADMIN_EMAIL=you@example.com`. Only that account
+// can download the backup. Deliberately not "the first person to sign up":
+// that would silently hand the keys to whoever registered quickest.
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+const isAdmin = (user) => Boolean(user && ADMIN_EMAIL && user.email.toLowerCase() === ADMIN_EMAIL);
+if (!ADMIN_EMAIL) console.warn("[admin] ADMIN_EMAIL is not set — the backup download is disabled.");
+
 // ─── Live football data ─────────────────────────────────────
 // Cached in football.js, so this is cheap to call often.
 app.get("/api/live", async (_req, res) => {
@@ -97,7 +105,59 @@ app.get("/api/state", (req, res) => {
 
 app.get("/api/me", (req, res) => {
   const user = currentUser(req);
-  res.json({ user: user ? publicUser(user) : null });
+  res.json({ user: user ? publicUser(user) : null, isAdmin: isAdmin(user) });
+});
+
+// ─── Backup ─────────────────────────────────────────────────
+// Everything needed to rebuild the league by hand if the volume is ever lost.
+// Admin only: before the deadline this contains picks that are sealed from
+// everyone else, so it must not be a public URL.
+app.get("/api/export", (req, res) => {
+  const user = currentUser(req);
+  if (!user) return res.status(401).json({ error: "Sign in first." });
+  if (!ADMIN_EMAIL) {
+    return res.status(503).json({
+      error: "Backups are disabled until ADMIN_EMAIL is set on the server (fly secrets set ADMIN_EMAIL=you@example.com).",
+    });
+  }
+  if (!isAdmin(user)) return res.status(403).json({ error: "Only the league admin can download the backup." });
+
+  const predictions = listPredictions();
+
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    season: SEASON_LABEL,
+    lockAt: new Date(LOCK_AT).toISOString(),
+    locked: isLocked(),
+    playerCount: listUsersFull().length,
+    // No PINs or password hashes: a 4-digit PIN behind a stolen hash file is
+    // worth very little, and picks are what this backup exists to protect. If
+    // accounts are ever lost, people re-register with the same email and their
+    // picks are restored from here.
+    contains: "names, emails, full predictions, Golden Boot and Manager picks, weekly score snapshots",
+    players: listUsersFull().map((u) => {
+      const p = predictions[u.id];
+      return {
+        name: u.name,
+        email: u.email,
+        joinedAt: new Date(u.created_at).toISOString(),
+        prediction: p
+          ? {
+              order: p.order,
+              topScorer: p.topScorer,
+              manager: p.manager,
+              updatedAt: new Date(p.updatedAt).toISOString(),
+            }
+          : null,
+      };
+    }),
+    snapshots: listSnapshots().map((s) => ({ ...s, takenAt: new Date(s.takenAt).toISOString() })),
+  };
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  res.setHeader("Content-Disposition", `attachment; filename="epl-picks-backup-${stamp}.json"`);
+  res.setHeader("Cache-Control", "no-store");
+  res.type("application/json").send(JSON.stringify(payload, null, 2));
 });
 
 // ─── Accounts ───────────────────────────────────────────────

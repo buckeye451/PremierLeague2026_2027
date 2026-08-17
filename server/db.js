@@ -59,6 +59,10 @@ const q = {
   userByEmail: db.prepare("SELECT * FROM users WHERE email = ?"),
   userById: db.prepare("SELECT * FROM users WHERE id = ?"),
   allUsers: db.prepare("SELECT id, name, created_at FROM users ORDER BY created_at ASC"),
+  // Same rows plus email, for the admin backup. Deliberately separate from
+  // allUsers so an email can never leak into the public /api/state response.
+  allUsersFull: db.prepare("SELECT id, name, email, created_at FROM users ORDER BY created_at ASC"),
+  allSnapshots: db.prepare("SELECT * FROM snapshots ORDER BY matchday ASC"),
   upsertPrediction: db.prepare(`
     INSERT INTO predictions (user_id, order_json, top_scorer, manager, updated_at)
     VALUES (?, ?, ?, ?, ?)
@@ -87,6 +91,15 @@ export const findUserById = (id) => q.userById.get(id);
 
 export const listUsers = () =>
   q.allUsers.all().map((u) => ({ uid: u.id, name: u.name, joinedAt: u.created_at }));
+
+export const listUsersFull = () => q.allUsersFull.all();
+
+export const listSnapshots = () =>
+  q.allSnapshots.all().map((s) => ({
+    matchday: s.matchday,
+    scores: JSON.parse(s.scores_json),
+    takenAt: s.taken_at,
+  }));
 
 export function savePrediction(userId, { order, topScorer, manager }) {
   q.upsertPrediction.run(userId, JSON.stringify(order), topScorer, manager, Date.now());

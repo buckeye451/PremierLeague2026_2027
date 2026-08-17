@@ -3,14 +3,14 @@ import { S, C } from "../styles.js";
 import { useLeague } from "../league.jsx";
 import { useAuth } from "../auth.jsx";
 import { EmptyState, LockBar, Movement, PrimaryLink, SectionHeading } from "../components/ui.jsx";
-import { IconArrowLeft } from "../components/icons.jsx";
+import { IconArrowLeft, IconDownload } from "../components/icons.jsx";
 import { scorePrediction } from "../scoring.js";
 import { ExtraPicks, ReadOnlyPrediction } from "./Predictions.jsx";
 
 export default function Everyone() {
   const { uid } = useParams();
   const { members, entries, leaderboard, preseason, picksVisible } = useLeague();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   if (uid) return <PlayerDetail uid={uid} />;
 
@@ -48,7 +48,9 @@ export default function Everyone() {
             ? "Tap anyone to see their full predicted table next to the real one."
             : "Picks stay sealed until the deadline. Here's who's in so far."
         }
-      />
+      >
+        {isAdmin && <BackupButton count={members.length} />}
+      </SectionHeading>
 
       <div style={S.list}>
         {rows.map((p, i) => {
@@ -133,6 +135,25 @@ export default function Everyone() {
         </div>
       )}
     </main>
+  );
+}
+
+// ── Admin-only backup download ──
+// A plain link, not fetch-into-a-blob: the session cookie rides along
+// automatically and Content-Disposition makes the browser save the file,
+// which is the one download path iOS Safari handles properly.
+function BackupButton({ count }) {
+  return (
+    <a
+      href="/api/export"
+      download
+      className="btn-ink u-tap"
+      style={{ ...S.btnInk, display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}
+      title={`Download all ${count} ${count === 1 ? "player" : "players"} and their picks as JSON`}
+    >
+      <IconDownload size={12} />
+      Backup
+    </a>
   );
 }
 

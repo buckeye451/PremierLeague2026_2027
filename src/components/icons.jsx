@@ -91,6 +91,10 @@ export const IconLock = (p) => (
   <Icon {...p}><rect x="3" y="11" width="18" height="11" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></Icon>
 );
 
+export const IconDownload = (p) => (
+  <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></Icon>
+);
+
 export const IconChevronUp = (p) => <Icon {...p}><path d="m18 15-6-6-6 6" /></Icon>;
 export const IconChevronDown = (p) => <Icon {...p}><path d="m6 9 6 6 6-6" /></Icon>;
 export const IconArrowLeft = (p) => <Icon {...p}><path d="M19 12H5M12 19l-7-7 7-7" /></Icon>;

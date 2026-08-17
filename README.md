@@ -181,7 +181,30 @@ fly ssh console -C "node -e \"
 \""
 ```
 
-**Back up the database.** Worth doing once after the deadline passes:
+**Back up everyone's picks.** Set your own email as the admin once:
+
+```bash
+fly secrets set ADMIN_EMAIL=you@example.com
+```
+
+Sign in with that email and a **Backup** button appears on the Everyone page.
+It downloads a JSON file with every player's name, email, full predicted table,
+Golden Boot and Manager picks, and the weekly score snapshots — enough to
+rebuild the league by hand if the volume is ever lost. Works from a phone.
+
+The file deliberately contains no PINs or password hashes. If accounts are ever
+lost, people re-register with the same email and you restore their picks from
+the backup.
+
+Nobody else can reach it: signed-out requests get a 401, other players get a
+403, and until `ADMIN_EMAIL` is set the endpoint is off entirely rather than
+open. That matters before the deadline, when the file contains picks that are
+sealed from everyone else.
+
+Worth pressing once the evening the deadline passes — after that the server
+refuses new predictions, so lost data can't be re-entered.
+
+For a byte-exact copy of the database instead:
 
 ```bash
 fly ssh sftp get /data/epl.db ./epl-backup.db

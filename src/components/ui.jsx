@@ -71,7 +71,7 @@ export function Kicker({ children, accent = false }) {
   );
 }
 
-// "Fri 21 Aug, 8:00 PM" — assembled from parts rather than a locale string so
+// "Fri 21 Aug, 3:00 PM" — assembled from parts rather than a locale string so
 // the separators don't drift with the viewer's locale.
 export const LOCK_LABEL = (() => {
   const parts = new Intl.DateTimeFormat("en-US", {

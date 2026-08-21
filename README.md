@@ -11,7 +11,7 @@ incomplete prediction regardless of what the browser allows.
 - **Anyone can browse** — the table, the leaderboard, everyone's picks, live
   scores. No account, no sign-in.
 - **An account is only needed to make picks** — name, email, 4-digit PIN.
-- **Predictions lock Friday 21 August 2026 at 8:00 PM Eastern**, enforced on
+- **Predictions lock Friday 21 August 2026 at 3:00 PM Eastern**, enforced on
   the server. After that, everything becomes public and the scoring starts.
 - **Picks stay sealed until the deadline** so nobody can copy. You can always
   see your own.
@@ -156,9 +156,9 @@ Both the server and the browser read this file, so a change applies to both —
 redeploy after editing.
 
 **A note on the deadline:** 21 August 2026 falls in daylight saving time, so
-"8 PM Eastern" is UTC−4 (EDT), which is `2026-08-22T00:00:00Z`. That's what
+"3 PM Eastern" is UTC−4 (EDT), which is `2026-08-21T19:00:00Z`. That's what
 `LOCK_AT` is set to. If you literally meant EST (UTC−5), change it to
-`1787360400000`.
+`1787342400000`.
 
 ### The team list
 

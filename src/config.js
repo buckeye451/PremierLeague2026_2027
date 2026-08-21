@@ -8,14 +8,14 @@ export const SEASON = 2026;
 export const SEASON_LABEL = "2026/27";
 
 // ─── Prediction lock ────────────────────────────────────────
-// Friday 21 August 2026, 8:00 PM Eastern = 2026-08-22T00:00:00Z.
+// Friday 21 August 2026, 3:00 PM Eastern = 2026-08-21T19:00:00Z.
 //
-// Note: on that date the US East Coast is on EDT (UTC−4), so "8 PM Eastern"
-// is UTC−4. If you literally meant EST (UTC−5), use 1787360400000 instead.
+// Note: on that date the US East Coast is on EDT (UTC−4), so "3 PM Eastern"
+// is UTC−4. If you literally meant EST (UTC−5), use 1787342400000 instead.
 //
 // The server reads this same constant and refuses to write predictions past
 // it, so the deadline holds regardless of what any browser thinks the time is.
-export const LOCK_AT = 1787356800000;
+export const LOCK_AT = 1787338800000;
 
 // Keep everyone's picks hidden from each other until the deadline, so nobody
 // can copy. Your own picks are always visible to you.
